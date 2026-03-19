@@ -50,9 +50,11 @@ The `debug-tool/` directory contains a local web UI (Python server) for testing 
 
 How I do lab reports, stats assignments, and long essays without actually writing them.
 
-The idea: you write a Skill file that encodes your professor's rubric, their unwritten preferences, and every mistake you've been marked down for. Claude follows it. Combined with [Chrome MCP](https://browsermcp.io/), Claude can read the assignment page, generate the content, and fill in the submission form — all in one go. For long, structured assignments with clear grading criteria, it's basically hands-off after the second or third iteration.
+You don't even write the Skill yourself — Claude has a built-in skill for that. Just give it your rubric and past graded assignments. It reads through the feedback, figures out what your professor cares about, and generates a Skill tailored to that class. After two or three rounds, it knows the grading patterns better than you do.
 
-More detail and example Skills in the [claude-cowork/](claude-cowork/) folder.
+Combined with [Chrome MCP](https://browsermcp.io/), Claude can read the assignment page, generate the content, fill in the submission form, and you just review before hitting submit. For structured assignments with clear grading criteria, it's basically hands-off.
+
+More detail in the [claude-cowork/](claude-cowork/) folder.
 
 ---
 

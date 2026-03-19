@@ -2,51 +2,55 @@
 
 > **[中文版](README_CN.md)**
 
-Claude Cowork is how I use Claude to handle long, complex assignments — lab reports, stats write-ups, multi-section essays. The kind of homework where you can't just paste the prompt and get a decent result.
+Claude Cowork is how I use Claude to handle long, complex assignments — lab reports, stats write-ups, multi-section essays. The kind of homework where pasting the prompt into ChatGPT gives you a C+ at best.
 
-The secret is two things working together: **Skills** and **Chrome MCP**.
+Two things make it work: **Skills** and **Chrome MCP**.
 
-## Skills: teaching Claude what your professor actually wants
+## Skills: you don't even write them yourself
 
-A Skill is basically a cheat sheet you write for Claude. It lives in your `.claude/` directory and tells Claude how to approach a specific type of assignment — not in generic terms, but calibrated to *your* class.
+Claude already has a built-in skill for creating skills. You don't need to sit there crafting a perfect instruction file from scratch. Just give Claude two things:
 
-You put three things in it:
+1. **The rubric / grading criteria** — screenshot it, copy-paste it, whatever. Just get it in front of Claude.
+2. **Past graded assignments** — your old submissions with the professor's feedback, red marks, point deductions. The more the better.
 
-1. **The rubric** — copy it in verbatim, not summarized
-2. **Your professor's quirks** — the stuff they say in class but don't write down ("don't use passive voice", "always include percent error", "I hate pie charts")
-3. **Feedback from past assignments** — every time you lose points, you add a line so it doesn't happen again
+Claude reads through all of that and generates a Skill tailored to your specific class. It picks up on patterns you might not even notice — which sections the professor cares most about, what kind of mistakes cost the most points, formatting preferences that aren't in the rubric but show up in the grading.
 
-After two or three assignments, the Skill knows your professor's taste. Claude stops writing generic A- work and starts writing the specific kind of A work that *this particular person with a red pen* wants to see.
+The Skill lives in your `.claude/` directory and persists across sessions. Next time you start an assignment for that class, Claude already knows the standards.
 
-## Chrome MCP: full automation
-
-Here's where it gets interesting. Claude Cowork connects to your browser through [Chrome MCP](https://browsermcp.io/), which means Claude can actually *see* and *interact with* web pages.
-
-What this means in practice: you point Claude at your assignment page, and it can read the instructions, pull up reference material, fill in text fields, navigate between tabs, and submit — all by itself. For something like an online lab report form or a Canvas assignment submission, the whole workflow can be hands-off.
-
-I use this for long assignments that would otherwise take hours of copy-pasting between Claude and the submission platform. Claude reads the rubric from the course page, generates the content following my Skill, and fills it in directly.
-
-## The iteration loop
+### The iteration loop
 
 ```
-Assignment 1: Write a Skill from the rubric → submit → get feedback
-Assignment 2: Add feedback to the Skill → submit → better grade
-Assignment 3: Skill is now calibrated → consistent results
+Assignment 1: Feed Claude the rubric → it generates a Skill → does the work → you submit
+Assignment 2: Feed Claude the graded version → it updates the Skill → does the next one better
+Assignment 3: Skill is dialed in → consistent high grades
 ```
 
-The first submission might not be perfect. That's fine. Each round of feedback makes the Skill sharper. By the third or fourth assignment, you're mostly just reviewing what Claude produced and hitting submit.
+You're not writing the Skill. You're not even updating it manually. You just keep feeding Claude your graded work and it figures out what to fix. By the third assignment, it knows your professor's taste better than you do.
 
-## What this works well for
+## Chrome MCP: hands-off from start to finish
 
-- Lab reports with strict formatting requirements
-- R/statistics assignments where code + interpretation both matter
-- Structured essays with rubrics (APA citations, specific section requirements)
-- Any repeating assignment type where the professor grades the same way each time
+Claude Cowork connects to your browser through [Chrome MCP](https://browsermcp.io/). That means Claude can see web pages, click buttons, fill in forms, navigate tabs — the full browser, not just text.
 
-Not great for creative writing or assignments where the professor expects your unique perspective. Those still need your brain.
+In practice: you point Claude at your Canvas assignment page. It reads the instructions, generates the content following your Skill, fills in the text fields, and you review before submitting. For online lab report forms or structured assignment submissions, the whole thing can run without you touching the keyboard.
+
+I use this for the assignments that would otherwise take hours of back-and-forth between Claude and the submission platform. Claude reads the rubric directly from the course page, writes the report, and puts it where it needs to go.
+
+## What works well
+
+- Lab reports with strict formatting (rubric + past feedback = Claude nails it)
+- R/statistics assignments (code + interpretation + proper ggplot formatting)
+- Structured essays with clear grading criteria (APA citations, required sections)
+- Any repeating assignment where the professor grades the same way each time
+
+Doesn't work great for creative writing or assignments where the professor wants to see *your* thinking. Those still need a human.
 
 ## Getting started
 
-- [How to write a good Skill](writing-effective-skills.md)
-- [Example: chemistry lab report Skill](example-skills/lab-report.md)
-- [Example: R statistics report Skill](example-skills/r-stats-report.md)
+1. Get [Claude Code](https://docs.anthropic.com/en/docs/claude-code) and set up [Chrome MCP](https://browsermcp.io/)
+2. Give Claude your course rubric and any past graded assignments
+3. Let it generate a Skill for your class
+4. Point it at your next assignment
+
+Example Skills (to see what the output looks like):
+- [Chemistry lab report](example-skills/lab-report.md)
+- [R statistics report](example-skills/r-stats-report.md)
