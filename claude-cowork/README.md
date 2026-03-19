@@ -1,53 +1,52 @@
-# Claude Cowork Homework Automation
+# Claude Cowork
 
 > **[中文版](README_CN.md)**
 
+Claude Cowork is how I use Claude to handle long, complex assignments — lab reports, stats write-ups, multi-section essays. The kind of homework where you can't just paste the prompt and get a decent result.
 
-Not a tool — a methodology.
+The secret is two things working together: **Skills** and **Chrome MCP**.
 
----
+## Skills: teaching Claude what your professor actually wants
 
-## The Problem
+A Skill is basically a cheat sheet you write for Claude. It lives in your `.claude/` directory and tells Claude how to approach a specific type of assignment — not in generic terms, but calibrated to *your* class.
 
-Most students using AI for homework do the same thing: paste the assignment prompt into ChatGPT and pray. The output is generic. It misses rubric criteria. It ignores the professor's pet peeves. It repeats mistakes you've already been penalized for. You submit it, lose points in the same places, and wonder why AI "doesn't work."
+You put three things in it:
 
----
+1. **The rubric** — copy it in verbatim, not summarized
+2. **Your professor's quirks** — the stuff they say in class but don't write down ("don't use passive voice", "always include percent error", "I hate pie charts")
+3. **Feedback from past assignments** — every time you lose points, you add a line so it doesn't happen again
 
-## The Solution: Skills
+After two or three assignments, the Skill knows your professor's taste. Claude stops writing generic A- work and starts writing the specific kind of A work that *this particular person with a red pen* wants to see.
 
-Claude Cowork has a feature called **Skills** — persistent instruction files that survive across conversations. They live in your `.claude/` directory and tell the model HOW to approach specific types of work.
+## Chrome MCP: full automation
 
-The insight is simple: **encode everything that affects your grade into a Skill.**
+Here's where it gets interesting. Claude Cowork connects to your browser through [Chrome MCP](https://browsermcp.io/), which means Claude can actually *see* and *interact with* web pages.
 
-1. **Rubric standards** — what the grading criteria actually say
-2. **Teacher-specific requirements** — the things they say in class but aren't written down
-3. **Past grading feedback** — what you lost points on, so it never happens again
+What this means in practice: you point Claude at your assignment page, and it can read the instructions, pull up reference material, fill in text fields, navigate between tabs, and submit — all by itself. For something like an online lab report form or a Canvas assignment submission, the whole workflow can be hands-off.
 
----
+I use this for long assignments that would otherwise take hours of copy-pasting between Claude and the submission platform. Claude reads the rubric from the course page, generates the content following my Skill, and fills it in directly.
 
-## The Loop
+## The iteration loop
 
 ```
-Assignment 1: Write Skill from rubric
-              → submit → get grade + feedback
-
-Assignment 2: Update Skill with feedback
-              → submit → quality improves
-
-Assignment 3: Skill is now calibrated to YOUR professor
-              → consistent high grades
+Assignment 1: Write a Skill from the rubric → submit → get feedback
+Assignment 2: Add feedback to the Skill → submit → better grade
+Assignment 3: Skill is now calibrated → consistent results
 ```
 
-Each cycle tightens the calibration. By the third or fourth assignment, the Skill knows your professor's taste better than you do. The model stops producing generic output and starts producing output calibrated to the person holding the red pen.
+The first submission might not be perfect. That's fine. Each round of feedback makes the Skill sharper. By the third or fourth assignment, you're mostly just reviewing what Claude produced and hitting submit.
 
----
+## What this works well for
 
-## Best For
+- Lab reports with strict formatting requirements
+- R/statistics assignments where code + interpretation both matter
+- Structured essays with rubrics (APA citations, specific section requirements)
+- Any repeating assignment type where the professor grades the same way each time
 
----
+Not great for creative writing or assignments where the professor expects your unique perspective. Those still need your brain.
 
-## Next Steps
+## Getting started
 
-- [Writing Effective Skills](writing-effective-skills.md) — how to actually build one
-- [Example: Lab Report Skill](example-skills/lab-report.md) — a real skill for chemistry lab reports
-- [Example: R Stats Report Skill](example-skills/r-stats-report.md) — a real skill for statistics assignments
+- [How to write a good Skill](writing-effective-skills.md)
+- [Example: chemistry lab report Skill](example-skills/lab-report.md)
+- [Example: R statistics report Skill](example-skills/r-stats-report.md)

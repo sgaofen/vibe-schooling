@@ -18,7 +18,7 @@ This repository doesn't resolve that contradiction. It just makes it harder to i
 |--------|-------------|-------|
 | [Canvas Sniper](canvas-sniper/) | Auto-answers Canvas LMS quizzes via Chrome extension | Chrome Extension, Gemini AI, GhostCursor |
 | [Glasses Auto-Answer](glasses-auto-answer/) | Smart glasses → photo → AI solves → audio answer in your ear | Xiaomi Smart Glasses, MacroDroid, Gemini Flash, OpenAI TTS |
-| [Claude Cowork Homework](claude-cowork/) | Methodology for automating complex assignments with Claude Cowork Skills | Claude Cowork, Custom Skills |
+| [Claude Cowork](claude-cowork/) | Full homework automation with Skills + Chrome MCP browser control | Claude, Skills, Chrome MCP |
 
 ---
 
@@ -46,15 +46,13 @@ The `debug-tool/` directory contains a local web UI (Python server) for testing 
 
 ---
 
-## Claude Cowork Homework
+## Claude Cowork
 
-Not a tool — a methodology.
+How I do lab reports, stats assignments, and long essays without actually writing them.
 
-The insight: Claude Cowork Skills are persistent instruction sets that survive across sessions. If you encode your professor's rubric, their specific stylistic preferences, the feedback from your last graded assignment, and the formatting quirks of your department into a Skill, Claude Cowork stops producing generic output. It produces output calibrated to the person grading it.
+The idea: you write a Skill file that encodes your professor's rubric, their unwritten preferences, and every mistake you've been marked down for. Claude follows it. Combined with [Chrome MCP](https://browsermcp.io/), Claude can read the assignment page, generate the content, and fill in the submission form — all in one go. For long, structured assignments with clear grading criteria, it's basically hands-off after the second or third iteration.
 
-The loop works like this: submit an assignment, get it back with feedback, fold that feedback into the Skill, submit the next one. Each cycle tightens the calibration. By the third or fourth assignment, the Skill knows your professor's taste better than you do.
-
-This works especially well for lab reports, R/statistics write-ups, and structured long-form essays — anything with a rubric and a pattern.
+More detail and example Skills in the [claude-cowork/](claude-cowork/) folder.
 
 ---
 
@@ -86,12 +84,12 @@ GEMINI_API_KEY=your_key OPENAI_API_KEY=your_key python3 app.py
 # Open http://127.0.0.1:8765
 ```
 
-### Path 3: Claude Cowork Homework
+### Path 3: Claude Cowork
 
-1. Install [Claude Cowork](https://docs.anthropic.com/en/docs/claude-cowork)
-2. Read the example Skills in `claude-cowork/example-skills/`
-3. Create a Skill encoding your course's rubric and requirements
-4. Run Claude Cowork against your assignment, iterate with grading feedback
+1. Install [Claude Code](https://docs.anthropic.com/en/docs/claude-code) and set up [Chrome MCP](https://browsermcp.io/)
+2. Look at the example Skills in `claude-cowork/example-skills/`
+3. Write a Skill for your course — rubric, professor's quirks, past feedback
+4. Point Claude at your assignment, let it work, review and submit
 
 ---
 
@@ -101,7 +99,7 @@ GEMINI_API_KEY=your_key OPENAI_API_KEY=your_key python3 app.py
 |--------|-------------|
 | Canvas Sniper | Chrome/Chromium browser, [Gemini API key](https://aistudio.google.com/apikey) (free tier works) |
 | Glasses Auto-Answer | Android phone, Xiaomi Smart Glasses, [MacroDroid](https://www.macrodroid.com/), Gemini API key, [OpenAI API key](https://platform.openai.com/api-keys) |
-| Claude Cowork Homework | [Claude Cowork CLI](https://docs.anthropic.com/en/docs/claude-cowork), Anthropic API access |
+| Claude Cowork | [Claude Code CLI](https://docs.anthropic.com/en/docs/claude-code), [Chrome MCP](https://browsermcp.io/), Anthropic API access |
 
 ---
 

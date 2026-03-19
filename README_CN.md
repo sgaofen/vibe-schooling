@@ -18,7 +18,7 @@
 |------|------|--------|
 | [Canvas Sniper](canvas-sniper/) | Chrome 插件自动答 Canvas LMS 题目 | Chrome 扩展、Gemini AI、GhostCursor |
 | [眼镜答题系统](glasses-auto-answer/) | 智能眼镜拍照 → AI 解题 → 语音播报答案 | 小米智能眼镜、MacroDroid、Gemini Flash、OpenAI TTS |
-| [Claude Cowork 做作业](claude-cowork/) | 用 Claude Cowork Skills 自动化复杂作业的方法论 | Claude Cowork、自定义 Skills |
+| [Claude Cowork](claude-cowork/) | Skills + Chrome MCP 全自动完成作业 | Claude、Skills、Chrome MCP |
 
 ---
 
@@ -44,15 +44,13 @@
 
 ---
 
-## Claude Cowork 做作业
+## Claude Cowork
 
-不是工具，是方法论。
+我怎么做实验报告、统计作业、长论文——不是自己写的。
 
-核心思路：Claude Cowork 的 Skills 是跨会话持久化的指令集。把教授的评分标准、具体的格式偏好、上次作业的批改反馈、院系的排版要求全部编码进一个 Skill，Claude Cowork 就不再生成泛泛的内容——它会生成针对批改人校准过的内容。
+写一个 Skill 文件，把教授的评分标准、课上说过但没写进标准的偏好、之前被扣过的分全编进去。Claude 照着做。配合 [Chrome MCP](https://browsermcp.io/)，Claude 能直接读你的作业页面、生成内容、填进提交表单——一条龙完成。迭代两三次之后，基本上你只需要审阅一下就能交了。
 
-循环是这样的：交作业 → 拿回批改反馈 → 把反馈写进 Skill → 交下一次作业。每一轮都在收紧校准。到第三四次作业的时候，Skill 比你自己还了解你教授的口味。
-
-对实验报告、R/统计分析报告、结构化长文论述特别有效——任何有评分标准和固定模式的作业都适用。
+详情和示例 Skill 在 [claude-cowork/](claude-cowork/) 文件夹。
 
 ---
 
@@ -84,12 +82,12 @@ GEMINI_API_KEY=你的密钥 OPENAI_API_KEY=你的密钥 python3 app.py
 # 打开 http://127.0.0.1:8765
 ```
 
-### 路径三：Claude Cowork 做作业
+### 路径三：Claude Cowork
 
-1. 安装 [Claude Cowork](https://docs.anthropic.com/en/docs/claude-cowork)
-2. 阅读 `claude-cowork/example-skills/` 里的示例 Skills
-3. 创建一个 Skill，把你课程的评分标准和要求编码进去
-4. 用 Claude Cowork 做作业，根据批改反馈迭代 Skill
+1. 安装 [Claude Code](https://docs.anthropic.com/en/docs/claude-code)，配置 [Chrome MCP](https://browsermcp.io/)
+2. 看看 `claude-cowork/example-skills/` 里的示例 Skill
+3. 给你的课写一个 Skill——评分标准、教授偏好、历史扣分
+4. 让 Claude 干活，你审阅，交作业
 
 ---
 
@@ -99,7 +97,7 @@ GEMINI_API_KEY=你的密钥 OPENAI_API_KEY=你的密钥 python3 app.py
 |------|------|
 | Canvas Sniper | Chrome/Chromium 浏览器、[Gemini API 密钥](https://aistudio.google.com/apikey)（免费额度就够） |
 | 眼镜答题系统 | Android 手机、小米智能眼镜、[MacroDroid](https://www.macrodroid.com/)、Gemini API 密钥、[OpenAI API 密钥](https://platform.openai.com/api-keys) |
-| Claude Cowork 做作业 | [Claude Cowork CLI](https://docs.anthropic.com/en/docs/claude-cowork)、Anthropic API 权限 |
+| Claude Cowork | [Claude Code CLI](https://docs.anthropic.com/en/docs/claude-code)、[Chrome MCP](https://browsermcp.io/)、Anthropic API 权限 |
 
 ---
 

@@ -2,141 +2,80 @@
 
 > **[中文版](README_CN.md)**
 
+Put on the glasses. Take a photo of the exam question. A few seconds later, the answer plays in your ear. Write it down. Done.
 
-# 小米眼镜自动答题系统
+No phone in hand, no screen glowing, no suspicious behavior. The whole thing runs in your pocket.
 
 ---
 
-## What is this?
-
-You take a photo of a homework problem with your Xiaomi smart glasses. A few seconds later, the full worked-out answer plays through your glasses speakers as natural-sounding dictation. You write it down. That's it.
-
-The pipeline is fully automated — no tapping, no swiping, no looking at your phone. Take the photo, put your pen on the paper, and listen.
-
-## Architecture
-
-Here's what happens every time you take a photo:
+## How it works
 
 ```
 Glasses photo → /DCIM/XiaomiGlass/IMG*.jpg
-  → MacroDroid: File Changed trigger
+  → MacroDroid detects new file
     → Shell script:
-        1. base64 encode image
-        2. POST to Gemini 3 Flash (high thinking effort)
-        3. Extract answer text
-        4. POST to OpenAI TTS (gpt-4o-mini-tts, coral voice)
-        5. Save tts_output.mp3
-    → MacroDroid: Play audio
-      → Answer plays through glasses speakers
+        1. base64 encode the image
+        2. Send to Gemini 3 Flash (high thinking)
+        3. Extract the answer
+        4. Send to OpenAI TTS (gpt-4o-mini-tts, coral)
+        5. Save as tts_output.mp3
+    → MacroDroid plays the audio
+      → You hear the answer through the glasses
 ```
 
-Let's walk through it:
+You snap a photo. MacroDroid picks it up. A shell script fires off two API calls — one to Gemini to solve the problem, one to OpenAI to turn the answer into speech. The MP3 plays through your glasses speakers. That's the whole pipeline. No server, no app, just a script on your phone.
 
-1. You snap a photo through the glasses. It lands in `/DCIM/XiaomiGlass/` on your phone.
-2. MacroDroid watches that folder. The moment a new image appears, it fires.
-3. A shell script base64-encodes the photo and sends it to **Gemini 3 Flash** with a carefully tuned prompt that solves the problem and formats the answer for spoken dictation.
-4. Gemini's text output goes straight to **OpenAI TTS** (gpt-4o-mini-tts, voice "coral"), which renders it as a slow, clear, teacher-paced audio file.
-5. MacroDroid plays the MP3 through your glasses speakers. You hear the answer and write it down.
+## Why audio and not a screen
 
-No cloud servers to maintain. No app to build. Just two API calls stitched together by a shell script running on your phone.
+Tried screen glasses. They all leak light. Doesn't matter if it's a green tint display or a full-color one — the back of the lens glows, and anyone behind you can see it. Spent way too long looking for one that doesn't. None of them work.
 
-## Why pure audio? Why not show it on a screen?
+Audio is different. The glasses just look like glasses. Xiaomi did a good job making them look normal. Turn on privacy mode, keep the volume low, and the person next to you won't hear anything. I've tested this sitting shoulder-to-shoulder with someone — they had no idea.
 
-This is the most important design decision in the whole system, and it's non-negotiable.
+The one thing you need to deal with is the indicator light. When the camera fires, a small LED blinks. Stick an anti-light privacy sticker over it. In daylight, it's invisible.
 
-**Every single screen-based smart glasses product on the market today has a light leakage problem.** The front might look fine, but the back of the lens glows. Anyone sitting behind you or beside you can see that glow. In a classroom, in an exam hall, in any situation where you need to look normal — it's a dead giveaway. No exceptions. Not the fancy ones, not the cheap ones. They all leak.
+## What you need
 
-Pure audio through the glasses speakers is **completely invisible**. The glasses look like normal glasses because they *are* normal-looking glasses (Xiaomi nailed that part). Turn on privacy mode, keep the volume low, and the person sitting right next to you won't hear a thing.
+**Hardware:**
+- Xiaomi Smart Glasses (any model with a camera)
+- Android phone
+- Earbuds (optional — the built-in speakers are fine at low volume)
 
-Audio-only isn't a compromise. It's the only approach that actually works.
+**Software:**
+- [MacroDroid](https://www.macrodroid.com/) — free version works
+- Xiaomi Glasses app (小米眼镜) — for importing photos to phone storage
 
-## Hardware requirements
+**API keys:**
+- [Gemini API key](https://aistudio.google.com/apikey) — free tier is enough
+- [OpenAI API key](https://platform.openai.com/api-keys) — pay-per-use, TTS is cheap
 
-| What / 什么 | Why / 为什么 |
-|------|------|
-| **Xiaomi Smart Glasses** (any model with a camera) | Takes the photo that kicks off the entire pipeline. 拍下触发整个流水线的照片。 |
-| **Android phone** | Runs MacroDroid, executes the shell script, makes the API calls. 运行 MacroDroid，执行 shell 脚本，发起 API 调用。 |
-| **Earbuds** (optional) | The glasses' built-in speakers work great at low volume. Pair Bluetooth earbuds if you want even more privacy. 眼镜自带扬声器在低音量下效果很好。如果想要更高隐蔽性可以配蓝牙耳机。 |
-
-## Software requirements
-
-| What / 什么 | Why / 为什么 |
-|------|------|
-| **MacroDroid** (Android) | Watches the photo folder, triggers the script, plays the audio. Free tier is enough. 监控照片文件夹，触发脚本，播放音频。免费版就够了。 |
-| **curl** on the phone | Makes the API calls. Get it via **Termux** (no root needed) or it comes pre-installed on rooted phones. 发起 API 调用。通过 Termux 获取（不需要 root），或者 root 过的手机自带。 |
-| **小米眼镜 app** (Xiaomi Glasses) | The official companion app — needed to import photos from glasses to phone storage. 官方配套 app——用于把照片从眼镜导入手机存储。 |
-
-## API keys
-
-You need exactly two API keys. That's it.
-
-| Key / 密钥 | Where to get it / 在哪里获取 | Cost / 费用 |
-|-----|-----------------|------|
-| **Gemini API Key** | [Google AI Studio](https://aistudio.google.com/apikey) | Free tier available / 有免费额度 |
-| **OpenAI API Key** | [OpenAI Platform](https://platform.openai.com/api-keys) | Pay-per-use, TTS is cheap / 按量计费，TTS 很便宜 |
-
-Paste them directly into the MacroDroid shell script (replace the `YOUR_..._HERE` placeholders), or set them as environment variables if you're using the debug tool.
-
-## Directory layout
+## What's in this folder
 
 ```
 glasses-auto-answer/
-├── README.md                        ← You are here / 你在这里
 ├── android-scripts/
-│   └── study_dictation_full.sh      ← The production shell script that runs on Android
-│                                       在 Android 上实际运行的生产脚本
+│   └── study_dictation_full.sh    # The script that runs on your phone
 ├── macrodroid/
-│   └── setup-guide.md               ← Step-by-step MacroDroid setup for complete beginners
-│                                       面向零基础用户的 MacroDroid 配置指南
-├── debug-tool/
-│   ├── README.md                    ← Debug tool docs / 调试工具文档
-│   ├── app.py                       ← Python web server for prompt tuning + TTS preview
-│   │                                   用于调试 prompt 和试听 TTS 的 Python Web 服务器
-│   ├── run.sh                       ← Quick launcher / 快速启动脚本
-│   └── static/
-│       ├── index.html               ← Web UI / 网页界面
-│       ├── app.js                   ← Frontend logic / 前端逻辑
-│       └── styles.css               ← Styling / 样式
-└── prompts/
-    ├── gemini-prompt.md             ← The Gemini prompt, documented and explained
-    │                                   Gemini prompt 的文档化说明
-    └── tts-instructions.md          ← The TTS system instructions, documented and explained
-                                       TTS 系统指令的文档化说明
+│   └── setup-guide.md             # Step-by-step setup for beginners
+├── prompts/
+│   ├── gemini-prompt.md           # How the Gemini prompt works
+│   └── tts-instructions.md        # How the TTS voice is configured
+└── debug-tool/
+    ├── app.py                     # Web UI for testing prompts on your computer
+    └── static/                    # Frontend files
 ```
 
-## Quick links
+## Where to start
 
-- **[MacroDroid Setup Guide](macrodroid/setup-guide.md)** — Complete beginner walkthrough for setting up the two macros on your phone. Don't know what MacroDroid is? Start here.
-  手机上配置两个宏的完整新手教程。不知道 MacroDroid 是什么？从这里开始。
+**New here?** Go to the [MacroDroid Setup Guide](macrodroid/setup-guide.md). It walks you through everything from installing the app to hearing your first answer.
 
-- **[Gemini Prompt Documentation](prompts/gemini-prompt.md)** — The prompt that makes this whole thing work, broken down section by section with explanations.
-  让这一切运转的 prompt，逐节拆解并附有解释。
+**Want to tweak the prompt?** Read the [Gemini prompt breakdown](prompts/gemini-prompt.md). Every rule in that prompt exists because something went wrong without it.
 
-- **[TTS Instructions Documentation](prompts/tts-instructions.md)** — How we tell OpenAI's voice model to read like a patient teacher.
-  我们如何让 OpenAI 的语音模型像一个有耐心的老师一样朗读。
+**Want to test on your computer first?** The [debug tool](debug-tool/) lets you drag in a photo, adjust the prompt, hear the TTS output, and export the final script — all from a browser.
 
-- **[Debug Tool](debug-tool/README.md)** — Desktop web UI for tuning prompts and testing TTS without touching your phone.
-  桌面端网页工具，用于在不碰手机的情况下调试 prompt 和测试 TTS。
+## About the prompt
 
-- **[Shell Script](android-scripts/study_dictation_full.sh)** — The actual script that runs on Android. Read it to understand exactly what happens when you take a photo.
-  实际在 Android 上运行的脚本。读一下就知道拍照后到底发生了什么。
+I spent a lot of time on this. The prompt has to do three things at once: solve the problem correctly, format the answer so TTS can actually read it without skipping letters or swallowing units, and keep the output short enough that OpenAI doesn't choke on it (under 3500 characters).
 
-## How the prompt works (briefly)
+The hardest part was getting TTS to read single-letter variables. If you just write "w" or "n", TTS ignores it. So the prompt tells Gemini to output "字母w" (meaning "the letter w") — forces TTS to say it out loud. Same deal with units after numbers: without a comma between "86.3" and "J", TTS merges them into nonsense.
 
-The Gemini prompt is the soul of this system. It does three jobs simultaneously, and it took a lot of painful iteration to get right:
-
-1. **Solves the problem** — reads the photo, identifies each question, works through the full solution to get maximum marks.
-   **解题** ——读取照片，识别每道题，完整推导解答过程以拿满分。
-
-3. **Stays within TTS limits** — keeps output under 3500 characters (the script enforces a hard limit at 3900) so OpenAI TTS processes it cleanly.
-   **控制在 TTS 限制内** ——输出控制在 3500 字符以内（脚本硬限制 3900），确保 OpenAI TTS 能正常处理。
-
-The TTS instructions then tell OpenAI's voice model to read like a patient teacher: slow, clear, with pauses between problems and natural English pronunciation for technical terms.
-
-For the full prompt breakdown, see [prompts/gemini-prompt.md](prompts/gemini-prompt.md) and [prompts/tts-instructions.md](prompts/tts-instructions.md).
-
-完整的 prompt 拆解见 [prompts/gemini-prompt.md](prompts/gemini-prompt.md) 和 [prompts/tts-instructions.md](prompts/tts-instructions.md)。
-
----
-
-*Built to solve a real problem: hearing the answer is better than seeing it when you need to look normal.*
+All of this is documented in [prompts/gemini-prompt.md](prompts/gemini-prompt.md).
