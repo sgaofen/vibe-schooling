@@ -36,7 +36,7 @@ The one thing you need to deal with is the indicator light. When the camera fire
 ## What you need
 
 **Hardware:**
-- Xiaomi Smart Glasses (any model with a camera)
+- Smart glasses with a camera and speakers — I use the **Xiaomi AI Glass** (12MP camera, 40g, looks like normal frames, ~¥1999). **Ray-Ban Meta** ($299+) and **Solos AirGo A5** work too. Anything with a camera + speakers/earbuds will do.
 - Android phone
 - Earbuds (optional — the built-in speakers are fine at low volume)
 
