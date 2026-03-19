@@ -48,9 +48,11 @@
 
 我怎么做实验报告、统计作业、长论文——不是自己写的。
 
-写一个 Skill 文件，把教授的评分标准、课上说过但没写进标准的偏好、之前被扣过的分全编进去。Claude 照着做。配合 [Chrome MCP](https://browsermcp.io/)，Claude 能直接读你的作业页面、生成内容、填进提交表单——一条龙完成。迭代两三次之后，基本上你只需要审阅一下就能交了。
+Skill 都不用你自己写——Claude 自带写 Skill 的 Skill。把评分标准和批改过的历史作业丢给它，它自己分析教授的打分习惯，自动生成针对这门课的 Skill。两三轮迭代之后，它比你还懂你教授要什么。
 
-详情和示例 Skill 在 [claude-cowork/](claude-cowork/) 文件夹。
+配合 [Chrome MCP](https://browsermcp.io/)，Claude 能直接读作业页面、生成内容、填进提交表单，你审阅一下就能交。
+
+详情在 [claude-cowork/](claude-cowork/) 文件夹。
 
 ---
 
