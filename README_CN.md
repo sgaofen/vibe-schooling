@@ -149,4 +149,4 @@ Vibe Schooling 的目的不是帮学生作弊，格局要大一点。
 
 ## 许可证
 
-[MIT](LICENSE) — Stephen Yu, 2026
+[MIT](LICENSE) — sgaofen, 2026

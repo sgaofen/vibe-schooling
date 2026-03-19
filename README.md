@@ -151,4 +151,4 @@ If your school's policy says don't do it, then the risk is yours.
 
 ## License
 
-[MIT](LICENSE) — Stephen Yu, 2026
+[MIT](LICENSE) — sgaofen, 2026
