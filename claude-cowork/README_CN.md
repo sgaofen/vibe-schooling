@@ -1,4 +1,4 @@
-# Claude Code 自动化做作业
+# Claude Cowork 自动化做作业
 
 > **[English Version](README.md)**
 
@@ -11,7 +11,7 @@
 
 ## 解决方案：Skills
 
-Claude Code 有一个功能叫 **Skills**——跨会话持久化的指令文件。它们存在你的 `.claude/` 目录里，告诉模型怎么处理特定类型的任务。
+Claude Cowork 有一个功能叫 **Skills**——跨会话持久化的指令文件。它们存在你的 `.claude/` 目录里，告诉模型怎么处理特定类型的任务。
 
 核心思路很简单：**把所有影响你成绩的东西都编码进一个 Skill。**
 

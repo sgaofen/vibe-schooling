@@ -9,7 +9,7 @@ A bad Skill produces bad output with confidence. A good Skill produces output yo
 
 ## What Is a Skill
 
-A Skill is a markdown file that gives Claude Code persistent instructions for a specific type of task. You can put it in:
+A Skill is a markdown file that gives Claude Cowork persistent instructions for a specific type of task. You can put it in:
 
 Think of it as a brief that tells a very capable but uninformed assistant exactly what standards to meet.
 

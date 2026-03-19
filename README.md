@@ -18,7 +18,7 @@ This repository doesn't resolve that contradiction. It just makes it harder to i
 |--------|-------------|-------|
 | [Canvas Sniper](canvas-sniper/) | Auto-answers Canvas LMS quizzes via Chrome extension | Chrome Extension, Gemini AI, GhostCursor |
 | [Glasses Auto-Answer](glasses-auto-answer/) | Smart glasses → photo → AI solves → audio answer in your ear | Xiaomi Smart Glasses, MacroDroid, Gemini Flash, OpenAI TTS |
-| [Claude Code Homework](claude-code-homework/) | Methodology for automating complex assignments with Claude Code Skills | Claude Code, Custom Skills |
+| [Claude Cowork Homework](claude-cowork/) | Methodology for automating complex assignments with Claude Cowork Skills | Claude Cowork, Custom Skills |
 
 ---
 
@@ -46,11 +46,11 @@ The `debug-tool/` directory contains a local web UI (Python server) for testing 
 
 ---
 
-## Claude Code Homework
+## Claude Cowork Homework
 
 Not a tool — a methodology.
 
-The insight: Claude Code Skills are persistent instruction sets that survive across sessions. If you encode your professor's rubric, their specific stylistic preferences, the feedback from your last graded assignment, and the formatting quirks of your department into a Skill, Claude Code stops producing generic output. It produces output calibrated to the person grading it.
+The insight: Claude Cowork Skills are persistent instruction sets that survive across sessions. If you encode your professor's rubric, their specific stylistic preferences, the feedback from your last graded assignment, and the formatting quirks of your department into a Skill, Claude Cowork stops producing generic output. It produces output calibrated to the person grading it.
 
 The loop works like this: submit an assignment, get it back with feedback, fold that feedback into the Skill, submit the next one. Each cycle tightens the calibration. By the third or fourth assignment, the Skill knows your professor's taste better than you do.
 
@@ -86,12 +86,12 @@ GEMINI_API_KEY=your_key OPENAI_API_KEY=your_key python3 app.py
 # Open http://127.0.0.1:8765
 ```
 
-### Path 3: Claude Code Homework
+### Path 3: Claude Cowork Homework
 
-1. Install [Claude Code](https://docs.anthropic.com/en/docs/claude-code)
-2. Read the example Skills in `claude-code-homework/example-skills/`
+1. Install [Claude Cowork](https://docs.anthropic.com/en/docs/claude-cowork)
+2. Read the example Skills in `claude-cowork/example-skills/`
 3. Create a Skill encoding your course's rubric and requirements
-4. Run Claude Code against your assignment, iterate with grading feedback
+4. Run Claude Cowork against your assignment, iterate with grading feedback
 
 ---
 
@@ -101,7 +101,7 @@ GEMINI_API_KEY=your_key OPENAI_API_KEY=your_key python3 app.py
 |--------|-------------|
 | Canvas Sniper | Chrome/Chromium browser, [Gemini API key](https://aistudio.google.com/apikey) (free tier works) |
 | Glasses Auto-Answer | Android phone, Xiaomi Smart Glasses, [MacroDroid](https://www.macrodroid.com/), Gemini API key, [OpenAI API key](https://platform.openai.com/api-keys) |
-| Claude Code Homework | [Claude Code CLI](https://docs.anthropic.com/en/docs/claude-code), Anthropic API access |
+| Claude Cowork Homework | [Claude Cowork CLI](https://docs.anthropic.com/en/docs/claude-cowork), Anthropic API access |
 
 ---
 

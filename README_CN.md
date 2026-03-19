@@ -18,7 +18,7 @@
 |------|------|--------|
 | [Canvas Sniper](canvas-sniper/) | Chrome 插件自动答 Canvas LMS 题目 | Chrome 扩展、Gemini AI、GhostCursor |
 | [眼镜答题系统](glasses-auto-answer/) | 智能眼镜拍照 → AI 解题 → 语音播报答案 | 小米智能眼镜、MacroDroid、Gemini Flash、OpenAI TTS |
-| [Claude Code 做作业](claude-code-homework/) | 用 Claude Code Skills 自动化复杂作业的方法论 | Claude Code、自定义 Skills |
+| [Claude Cowork 做作业](claude-cowork/) | 用 Claude Cowork Skills 自动化复杂作业的方法论 | Claude Cowork、自定义 Skills |
 
 ---
 
@@ -44,11 +44,11 @@
 
 ---
 
-## Claude Code 做作业
+## Claude Cowork 做作业
 
 不是工具，是方法论。
 
-核心思路：Claude Code 的 Skills 是跨会话持久化的指令集。把教授的评分标准、具体的格式偏好、上次作业的批改反馈、院系的排版要求全部编码进一个 Skill，Claude Code 就不再生成泛泛的内容——它会生成针对批改人校准过的内容。
+核心思路：Claude Cowork 的 Skills 是跨会话持久化的指令集。把教授的评分标准、具体的格式偏好、上次作业的批改反馈、院系的排版要求全部编码进一个 Skill，Claude Cowork 就不再生成泛泛的内容——它会生成针对批改人校准过的内容。
 
 循环是这样的：交作业 → 拿回批改反馈 → 把反馈写进 Skill → 交下一次作业。每一轮都在收紧校准。到第三四次作业的时候，Skill 比你自己还了解你教授的口味。
 
@@ -84,12 +84,12 @@ GEMINI_API_KEY=你的密钥 OPENAI_API_KEY=你的密钥 python3 app.py
 # 打开 http://127.0.0.1:8765
 ```
 
-### 路径三：Claude Code 做作业
+### 路径三：Claude Cowork 做作业
 
-1. 安装 [Claude Code](https://docs.anthropic.com/en/docs/claude-code)
-2. 阅读 `claude-code-homework/example-skills/` 里的示例 Skills
+1. 安装 [Claude Cowork](https://docs.anthropic.com/en/docs/claude-cowork)
+2. 阅读 `claude-cowork/example-skills/` 里的示例 Skills
 3. 创建一个 Skill，把你课程的评分标准和要求编码进去
-4. 用 Claude Code 做作业，根据批改反馈迭代 Skill
+4. 用 Claude Cowork 做作业，根据批改反馈迭代 Skill
 
 ---
 
@@ -99,7 +99,7 @@ GEMINI_API_KEY=你的密钥 OPENAI_API_KEY=你的密钥 python3 app.py
 |------|------|
 | Canvas Sniper | Chrome/Chromium 浏览器、[Gemini API 密钥](https://aistudio.google.com/apikey)（免费额度就够） |
 | 眼镜答题系统 | Android 手机、小米智能眼镜、[MacroDroid](https://www.macrodroid.com/)、Gemini API 密钥、[OpenAI API 密钥](https://platform.openai.com/api-keys) |
-| Claude Code 做作业 | [Claude Code CLI](https://docs.anthropic.com/en/docs/claude-code)、Anthropic API 权限 |
+| Claude Cowork 做作业 | [Claude Cowork CLI](https://docs.anthropic.com/en/docs/claude-cowork)、Anthropic API 权限 |
 
 ---
 

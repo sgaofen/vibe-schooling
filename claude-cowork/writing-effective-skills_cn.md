@@ -7,7 +7,7 @@
 
 ## Skill 是什么
 
-Skill 是一个 markdown 文件，给 Claude Code 提供某类任务的持久指令。你可以放在：
+Skill 是一个 markdown 文件，给 Claude Cowork 提供某类任务的持久指令。你可以放在：
 
 - `.claude/CLAUDE.md` — applies to all conversations in the directory / 对该目录下所有对话生效
 - A custom skill file invoked with a slash command / 用斜杠命令调用的自定义 skill 文件

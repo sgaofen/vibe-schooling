@@ -1,4 +1,4 @@
-# Claude Code Homework Automation
+# Claude Cowork Homework Automation
 
 > **[中文版](README_CN.md)**
 
@@ -15,7 +15,7 @@ Most students using AI for homework do the same thing: paste the assignment prom
 
 ## The Solution: Skills
 
-Claude Code has a feature called **Skills** — persistent instruction files that survive across conversations. They live in your `.claude/` directory and tell the model HOW to approach specific types of work.
+Claude Cowork has a feature called **Skills** — persistent instruction files that survive across conversations. They live in your `.claude/` directory and tell the model HOW to approach specific types of work.
 
 The insight is simple: **encode everything that affects your grade into a Skill.**
 
