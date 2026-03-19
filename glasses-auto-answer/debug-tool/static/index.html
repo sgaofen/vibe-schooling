@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>学习听写助手</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="hero">
+        <div>
+          <p class="eyebrow">Study Dictation Helper</p>
+          <h1>学习听写助手</h1>
+          <p class="hero-copy">
+            在桌面端完成图片识别、Prompt 调试、TTS 试听和 Android shell 脚本导出。
+          </p>
+        </div>
+        <div class="hero-meta">
+          <div class="meta-chip">
+            <span>Gemini</span>
+            <strong id="geminiModelLabel">加载中</strong>
+          </div>
+          <div class="meta-chip">
+            <span>TTS</span>
+            <strong id="ttsModelLabel">加载中</strong>
+          </div>
+        </div>
+      </header>
+
+      <main class="workspace">
+        <section class="card card-image">
+          <div class="section-title">
+            <div>
+              <p class="kicker">输入</p>
+              <h2>题目图片</h2>
+            </div>
+            <label class="ghost-button" for="imageInput">选择图片</label>
+            <input id="imageInput" type="file" accept="image/*" hidden />
+          </div>
+          <button id="dropzone" class="dropzone" type="button">
+            <span class="dropzone-title">拖拽图片到这里</span>
+            <span class="dropzone-subtitle">或点击选择本地题目照片</span>
+          </button>
+          <div class="preview-frame">
+            <img id="previewImage" alt="预览图" hidden />
+            <div id="previewEmpty" class="preview-empty">尚未选择图片</div>
+          </div>
+          <div class="info-row">
+            <span id="imageName">未选择文件</span>
+            <span id="imageMeta">支持 jpg / png / webp</span>
+          </div>
+        </section>
+
+        <section class="card card-editor">
+          <div class="section-title">
+            <div>
+              <p class="kicker">调试</p>
+              <h2>Gemini Prompt</h2>
+            </div>
+            <button id="resetPromptButton" class="ghost-button" type="button">恢复默认</button>
+          </div>
+          <textarea id="promptInput" class="editor editor-tall" spellcheck="false"></textarea>
+          <div class="toolbar">
+            <div class="stats"><span id="promptStats">0 字</span></div>
+            <button id="geminiButton" class="primary-button" type="button">发送到 Gemini</button>
+          </div>
+        </section>
+
+        <section class="card card-output">
+          <div class="section-title">
+            <div>
+              <p class="kicker">结果</p>
+              <h2>Gemini 输出</h2>
+            </div>
+            <button id="copyOutputButton" class="ghost-button" type="button">复制文本</button>
+          </div>
+          <textarea id="outputInput" class="editor editor-medium" spellcheck="false" placeholder="Gemini 返回的答案会显示在这里，你也可以手动微调后再送去 TTS。"></textarea>
+          <div class="info-row">
+            <span id="outputStats">0 字</span>
+            <span id="geminiStatus">等待请求</span>
+          </div>
+        </section>
+
+        <section class="card card-tts">
+          <div class="section-title">
+            <div>
+              <p class="kicker">朗读</p>
+              <h2>TTS Instructions</h2>
+            </div>
+            <button id="resetTtsButton" class="ghost-button" type="button">恢复默认</button>
+          </div>
+          <textarea id="ttsInput" class="editor editor-medium" spellcheck="false"></textarea>
+          <div class="toolbar">
+            <div class="stats"><span id="ttsStats">0 字</span></div>
+            <div class="button-row">
+              <button id="ttsButton" class="primary-button" type="button">播放 TTS</button>
+              <button id="exportButton" class="secondary-button" type="button">导出脚本</button>
+            </div>
+          </div>
+          <audio id="audioPlayer" controls preload="none"></audio>
+          <div class="info-row">
+            <span id="ttsStatus">等待音频</span>
+            <span>Voice: <strong id="voiceLabel">coral</strong></span>
+          </div>
+        </section>
+      </main>
+
+      <footer class="status-bar">
+        <div id="globalStatus">准备就绪</div>
+        <div class="status-hint">导出会自动做 Android shell 安全转义</div>
+      </footer>
+    </div>
+
+    <script src="/static/app.js"></script>
+  </body>
+</html>

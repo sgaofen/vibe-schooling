@@ -1,0 +1,12 @@
+.env
+*.env
+.env.*
+!.env.example
+.DS_Store
+__pycache__/
+*.pyc
+exports/
+review/
+node_modules/
+*.zip
+*.tmp

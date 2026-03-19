@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Canvas Sniper - 使用说明</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 50%, #16213e 100%);
+            color: #d0d0d0;
+            min-height: 100vh;
+            padding: 40px 20px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 700px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.04);
+            border-radius: 16px;
+            padding: 36px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        h1 {
+            color: #4CAF50;
+            text-align: center;
+            margin-bottom: 8px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.35);
+            font-size: 13px;
+            margin-bottom: 30px;
+        }
+
+        h2 {
+            color: #64B5F6;
+            margin: 28px 0 14px 0;
+            font-size: 18px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            padding-bottom: 8px;
+        }
+
+        p,
+        li {
+            line-height: 1.8;
+            margin-bottom: 8px;
+        }
+
+        ul,
+        ol {
+            padding-left: 25px;
+        }
+
+        .feature {
+            background: rgba(76, 175, 80, 0.08);
+            border-left: 3px solid #4CAF50;
+            padding: 14px 16px;
+            margin: 14px 0;
+            border-radius: 0 10px 10px 0;
+        }
+
+        .warning {
+            background: rgba(255, 152, 0, 0.08);
+            border-left: 3px solid #FF9800;
+            padding: 14px 16px;
+            margin: 14px 0;
+            border-radius: 0 10px 10px 0;
+        }
+
+        .info {
+            background: rgba(100, 181, 246, 0.08);
+            border-left: 3px solid #64B5F6;
+            padding: 14px 16px;
+            margin: 14px 0;
+            border-radius: 0 10px 10px 0;
+        }
+
+        .shortcut {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 2px 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 13px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 14px 0;
+        }
+
+        th,
+        td {
+            padding: 10px 14px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        th {
+            color: #64B5F6;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        td {
+            font-size: 13px;
+        }
+
+        .back-btn {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            cursor: pointer;
+            margin-top: 30px;
+            transition: background 0.2s;
+        }
+
+        .back-btn:hover {
+            background: #45a049;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🎯 Canvas Sniper</h1>
+        <p class="subtitle">智能 Canvas 答题助手 · v2.0</p>
+
+        <h2>📌 支持题型</h2>
+        <table>
+            <tr>
+                <th>题型</th>
+                <th>说明</th>
+            </tr>
+            <tr>
+                <td>✅ 单选题</td>
+                <td>自动勾选正确选项</td>
+            </tr>
+            <tr>
+                <td>✅ 多选题</td>
+                <td>自动勾选所有正确选项</td>
+            </tr>
+            <tr>
+                <td>✅ 下拉选择题</td>
+                <td>自动从下拉菜单中选择正确答案</td>
+            </tr>
+            <tr>
+                <td>✅ 填空题</td>
+                <td>自动填入正确答案</td>
+            </tr>
+            <tr>
+                <td>✅ 混合题</td>
+                <td>同时含下拉和填空的复合题目</td>
+            </tr>
+            <tr>
+                <td>✅ 简答题</td>
+                <td>自动写入完整的文字回答</td>
+            </tr>
+        </table>
+
+        <h2>🚀 使用方法</h2>
+        <div class="feature">
+            <strong>双击答题：</strong>在题目区域任意位置<strong>双击鼠标</strong>即可触发自动答题。
+        </div>
+        <p>系统会自动：</p>
+        <ol>
+            <li>截取当前页面</li>
+            <li>识别题目类型和选项</li>
+            <li>调用 AI 分析答案</li>
+            <li>自动填写/选择答案</li>
+        </ol>
+
+        <h2>⚙️ 设置说明</h2>
+        <table>
+            <tr>
+                <th>开关</th>
+                <th>功能</th>
+            </tr>
+            <tr>
+                <td><strong>启用</strong></td>
+                <td>开启或关闭插件的自动答题功能</td>
+            </tr>
+            <tr>
+                <td><strong>无痕模式</strong></td>
+                <td>开启后隐藏右下角的状态提示（如"分析中"、"完成"等），更加隐蔽</td>
+            </tr>
+            <tr>
+                <td><strong>模拟鼠标</strong></td>
+                <td>开启后会模拟真人操作：鼠标自动移动到选项、逐字打字、模拟点击下拉框。关闭则瞬间填好答案（快速模式）</td>
+            </tr>
+        </table>
+
+        <h2>⌨️ 快捷键</h2>
+        <p><span class="shortcut">ESC</span> — 取消正在进行的分析或操作</p>
+
+        <h2>💡 模拟鼠标模式</h2>
+        <div class="info">
+            开启「模拟鼠标」后，插件会像真人一样操作：
+            <ul style="margin-top: 8px;">
+                <li>鼠标自动移动到目标位置（有弧线轨迹和随机抖动）</li>
+                <li>填空题逐字输入，偶尔会"打错字"再删除</li>
+                <li>下拉题会弹出菜单、移到选项、点击选择</li>
+                <li>选择题会模拟鼠标移到选项后点击</li>
+                <li>操作过程中你的真实鼠标会被暂时锁定</li>
+            </ul>
+        </div>
+
+        <h2>⚠️ 注意事项</h2>
+        <div class="warning">
+            <ul>
+                <li>确保题目<strong>完全显示在屏幕内</strong>，AI 只能看到截图范围</li>
+                <li>对于有<strong>图表</strong>的题目，确保图表也在可见区域</li>
+                <li>如果答案不正确，可以<strong>再次双击</strong>重新分析</li>
+                <li>网络不稳定时可能需要等待较长时间</li>
+                <li>使用模拟鼠标模式时，<strong>不要移动鼠标或切换窗口</strong></li>
+                <li>部分特殊格式的题目可能无法识别</li>
+            </ul>
+        </div>
+
+        <h2>🔧 常见问题</h2>
+        <p><strong>Q: 双击没有反应？</strong></p>
+        <p>A: 检查扩展是否启用（popup 里的开关），刷新页面后重试。</p>
+
+        <p><strong>Q: 答案不正确？</strong></p>
+        <p>A: AI 可能误判，可以再次双击重试，或手动修改。</p>
+
+        <p><strong>Q: 一直显示"分析中"？</strong></p>
+        <p>A: 网络可能较慢，等待或按 ESC 取消后重试。</p>
+
+        <p><strong>Q: 模拟鼠标模式下想中断？</strong></p>
+        <p>A: 按 ESC 即可立即停止，光标恢复正常。</p>
+
+        <button class="back-btn" onclick="window.close()">关闭</button>
+    </div>
+</body>
+
+</html>
