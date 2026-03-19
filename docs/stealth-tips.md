@@ -2,59 +2,55 @@
 
 > **[中文版](stealth-tips_cn.md)**
 
-
-The tools work. The question is whether anyone notices you using them. This page is about the second part.
-
----
+The tech works. The question is whether anyone notices you using it.
 
 ## Canvas Sniper
 
-**Detection risk: Low.**
+Low risk. The extension runs as a content script inside the Canvas page. From Canvas's perspective, a student is clicking answers and typing text — because that's literally what's happening, just automated.
 
-The extension runs inside the page as a content script. From Canvas's perspective, the student is clicking answers and typing text — because that's literally what's happening, just automated. There is no network signature, no browser fingerprint change, no injected iframe. Canvas LMS has no mechanism to detect a content script running in the same tab.
+Mouse Simulation makes it harder to distinguish from real input: bezier curve cursor paths, irregular typing delays, dropdown menus physically opened before selection. Via CDP, the events are indistinguishable from a real mouse at the browser level.
 
-Mouse Simulation mode makes it even harder to distinguish: the cursor follows bezier curves with randomized control points, typing includes irregular delays between keystrokes, and dropdown menus are physically opened before selections are made. At the browser level (via CDP), the events are indistinguishable from a real mouse.
+Stealth mode hides the small processing indicator. With it on, nothing on screen gives you away.
 
-Stealth mode hides the small status overlay that normally appears when processing a question. With it on, there's nothing visible on-screen to give you away.
+**The limit:** it cannot bypass Lockdown Browser. If your school uses Respondus or similar proctoring software that locks the browser, Canvas Sniper won't load. For proctored exams, use the glasses system.
 
-**The one thing it can't do: bypass Lockdown Browser.** If your school uses Respondus or a similar proctoring tool that locks the browser environment, Canvas Sniper won't load. For proctored exams, use the glasses system instead.
+## Glasses system
 
----
+### Why audio beats any screen
 
-## Glasses System
+I looked at every smart glasses option with a display — green tint, full color, you name it. They all have the same problem: **the back of the lens glows.** From the front you might not notice, but anyone behind you or walking past sees it immediately. In an exam hall with a proctor circling the room, that's a death sentence.
 
-### Why Audio Beats Screens
+Audio through the glasses speakers is invisible. There's nothing to see. The glasses look like regular glasses because they basically are — the Xiaomi AI Glass weighs 40g and looks like an ordinary pair of frames. Other options like Ray-Ban Meta or Solos AirGo work too, as long as they have a camera and speakers.
 
-Every screen-based smart glasses product on the market today has the same Achilles heel: **light leakage**.
+Privacy mode + low volume = the person sitting right next to you hears nothing. I've tested this multiple times, sitting shoulder to shoulder. Zero sound leakage.
 
-- Green-screen and color-screen glasses glow from the back of the lens
-- Even if the front looks clean from your angle, someone sitting behind you or walking past sees the glow
-- No manufacturer has fully solved this — it's a fundamental physics problem with current display technology
-- The glow is especially visible in dim rooms (exam halls with fluorescent lighting)
+### Compatible glasses
 
-Pure audio eliminates this entirely:
-- The glasses look like ordinary glasses because, functionally, they are
-- Built-in speakers with privacy mode direct sound into your ears, not outward
-- At low volume, someone sitting **right next to you** hears nothing
-- No screen = no glow = no visual tell whatsoever
+This system works with any smart glasses that have a camera and built-in speakers:
 
-### The Indicator Light
+| Glasses | Camera | Speakers | Notes |
+|---------|--------|----------|-------|
+| **Xiaomi AI Glass** | 12MP, f/2.2, 105° wide | 2 directional speakers | What I use. 40g, looks like normal glasses. ~¥1999 |
+| **Ray-Ban Meta** | 12MP ultra-wide | Temple speakers | More widely available outside China. $299+ |
+| **Solos AirGo A5** | 16MP | Open-ear speakers | Budget-friendly alternative |
 
-Xiaomi glasses blink a small light when the camera activates. This is the one remaining tell.
+The key requirements are: camera that can take a photo you can trigger, and speakers (or Bluetooth earbuds pairing). The MacroDroid automation just needs the photos to land in a known folder on your phone.
 
-**Fix**: Buy an anti-light privacy sticker (防闪贴纸) and cover the indicator.
+### The indicator light
 
-- **Daylight**: Completely invisible with the sticker. No one will notice.
-- **Dark rooms**: A faint glow might still be visible at very close range. Be aware of your lighting environment.
+Most glasses blink an LED when the camera activates. On the Xiaomi AI Glass, it's a small light near the lens.
 
----
+**Fix:** buy an anti-light privacy sticker (防闪贴纸) and cover it.
 
-## General Advice
+- **Daylight:** completely invisible with the sticker
+- **Dark rooms:** a faint glow might still be visible at very close range — be aware of your environment
 
-The biggest risk isn't technical — it's behavioral. The system can be invisible, but you can't be.
+### Don't get caught by your own behavior
 
-- **Don't act differently.** If you normally look around during exams, keep doing it. If you normally sit still, sit still. Sudden changes in behavior are more suspicious than any gadget.
-- **Test the full pipeline before the exam.** Know how long each step takes, what failure looks like, and what to do if something breaks. Surprises during an exam are dangerous.
-- **Keep your phone out of sight.** The pipeline runs automatically — the phone should be in your pocket or bag, not on the desk.
-- **Practice the photo gesture.** Taking a photo with the glasses should look natural and fast. Practice until it's muscle memory.
-- **Have a fallback plan.** If the system fails mid-exam, you need to be able to continue answering normally. Don't depend on it 100%.
+The system can be invisible. You might not be. Some things to keep in mind:
+
+- **Act normal.** If you usually fidget during exams, keep fidgeting. If you usually sit still, sit still. Sudden changes in behavior catch more attention than any gadget.
+- **Practice the photo gesture.** Taking a photo with the glasses should look like adjusting your frames or scratching your temple. Make it muscle memory.
+- **Phone stays in your pocket.** The pipeline is automatic. Having your phone on the desk defeats the purpose.
+- **Test before the exam.** Know how long each step takes, what failure looks like, and what you'll do if something breaks mid-exam. Surprises are dangerous.
+- **Don't rely on it 100%.** If the system fails, you need to be able to keep answering on your own. It's a tool, not a life raft.
