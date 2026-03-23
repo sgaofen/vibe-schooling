@@ -1,4 +1,4 @@
-# Xiaomi Glasses Auto-Answer System
+# 眼镜拍照答题系统
 
 > **[English Version](README.md)**
 
@@ -31,7 +31,7 @@
 
 | What / 什么 | Why / 为什么 |
 |------|------|
-| **Xiaomi Smart Glasses** (any model with a camera) | Takes the photo that kicks off the entire pipeline. 拍下触发整个流水线的照片。 |
+| **Xiaomi AI Glass** (any model with a camera) | Takes the photo that kicks off the entire pipeline. 拍下触发整个流水线的照片。 |
 | **Android phone** | Runs MacroDroid, executes the shell script, makes the API calls. 运行 MacroDroid，执行 shell 脚本，发起 API 调用。 |
 | **Earbuds** (optional) | The glasses' built-in speakers work great at low volume. Pair Bluetooth earbuds if you want even more privacy. 眼镜自带扬声器在低音量下效果很好。如果想要更高隐蔽性可以配蓝牙耳机。 |
 

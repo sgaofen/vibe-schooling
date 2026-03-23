@@ -1,4 +1,4 @@
-# Xiaomi Glasses Auto-Answer System
+# Glasses Auto-Answer System
 
 > **[中文版](README_CN.md)**
 

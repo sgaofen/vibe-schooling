@@ -17,7 +17,7 @@ This repository doesn't resolve that contradiction. It just makes it harder to i
 | Module | What it does | Stack |
 |--------|-------------|-------|
 | [Canvas Sniper](canvas-sniper/) | Auto-answers Canvas LMS quizzes via Chrome extension | Chrome Extension, Gemini AI, GhostCursor |
-| [Glasses Auto-Answer](glasses-auto-answer/) | Smart glasses → photo → AI solves → audio answer in your ear | Xiaomi Smart Glasses, MacroDroid, Gemini Flash, OpenAI TTS |
+| [Glasses Auto-Answer](glasses-auto-answer/) | Smart glasses → photo → AI solves → audio answer in your ear | Xiaomi AI Glass, MacroDroid, Gemini Flash, OpenAI TTS |
 | [Claude Cowork](claude-cowork/) | Full homework automation with Skills + Chrome MCP browser control | Claude, Skills, Chrome MCP |
 
 ---
@@ -38,7 +38,7 @@ Stealth mode hides the status notification overlay entirely. The extension runs 
 
 ## Glasses Auto-Answer
 
-The pipeline: Xiaomi smart glasses → take a photo → Android phone detects the new image via MacroDroid → shell script sends the image to Gemini Flash for analysis → answer text goes to OpenAI TTS → audio plays back through the glasses' speakers. The whole loop finishes in seconds.
+The pipeline: Xiaomi AI Glass → take a photo → Android phone detects the new image via MacroDroid → shell script sends the image to Gemini Flash for analysis → answer text goes to OpenAI TTS → audio plays back through the glasses' speakers. The whole loop finishes in seconds.
 
 The critical design choice is **pure audio, no screen**. Every screen-based smart glasses product on the market today has the same fatal flaw: light leakage. Even if the front looks fine, the back of the lens glows. Anyone sitting behind you — or a proctor walking past — can see it. Audio through the glasses' built-in speakers, with privacy mode enabled and volume low, is invisible. The glasses look like ordinary glasses because, functionally, they are. An anti-flash sticker covers the indicator light that would otherwise blink when taking a photo.
 
@@ -100,7 +100,7 @@ GEMINI_API_KEY=your_key OPENAI_API_KEY=your_key python3 app.py
 | Module | Requirements |
 |--------|-------------|
 | Canvas Sniper | Chrome/Chromium browser, [Gemini API key](https://aistudio.google.com/apikey) (free tier works) |
-| Glasses Auto-Answer | Android phone, Xiaomi Smart Glasses, [MacroDroid](https://www.macrodroid.com/), Gemini API key, [OpenAI API key](https://platform.openai.com/api-keys) |
+| Glasses Auto-Answer | Android phone, Xiaomi AI Glass, [MacroDroid](https://www.macrodroid.com/), Gemini API key, [OpenAI API key](https://platform.openai.com/api-keys) |
 | Claude Cowork | [Claude Code CLI](https://docs.anthropic.com/en/docs/claude-code), [Chrome MCP](https://browsermcp.io/), Anthropic API access |
 
 ---
