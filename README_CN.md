@@ -12,6 +12,17 @@
 
 ---
 
+## 截图
+
+| | |
+|---|---|
+| ![Canvas Sniper 使用中](docs/images/canvas-sniper-demo.png) | ![调试工具 — Gemini 解题 + TTS](docs/images/debug-tool-demo.png) |
+| Canvas Sniper 自动答题中 | 调试工具：微积分题目 → Gemini 解题 → TTS 预览 |
+| ![小米 AI Glass](docs/images/xiaomi-ai-glass.jpg) | ![Chrome 商店](docs/images/canvas-sniper-store.png) |
+| 眼镜——看起来就是普通眼镜 | Canvas Sniper 已上架 Chrome 商店（5.0 评分） |
+
+---
+
 ## 模块一览
 
 | 模块 | 功能 | 技术栈 |

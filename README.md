@@ -12,6 +12,17 @@ This repository doesn't resolve that contradiction. It just makes it harder to i
 
 ---
 
+## Screenshots
+
+| | |
+|---|---|
+| ![Canvas Sniper in action](docs/images/canvas-sniper-demo.png) | ![Debug tool — Gemini OCR + TTS](docs/images/debug-tool-demo.png) |
+| Canvas Sniper auto-answering a Canvas quiz | Debug tool: Calculus problem → Gemini solves → TTS preview |
+| ![Xiaomi AI Glass](docs/images/xiaomi-ai-glass.jpg) | ![Chrome Web Store](docs/images/canvas-sniper-store.png) |
+| The glasses — just looks like a normal pair of frames | Canvas Sniper on the Chrome Web Store (5.0 rating) |
+
+---
+
 ## Modules
 
 | Module | What it does | Stack |
