@@ -2,117 +2,127 @@
 
 > **[English Version](README.md)**
 
+戴上眼镜，对着题拍一张照，15 到 25 秒后答案在耳边响起，照着写就行。
 
-# 小米眼镜自动答题系统
+不用拿手机，不用看屏幕，没有亮光暴露你。整条流水线都跑在裤兜里。
 
-## 这是什么？
-
-用小米智能眼镜拍一张作业题的照片，几秒后完整的解题过程就会通过眼镜扬声器以自然语音播报出来，你边听边写。就这么简单。
-
-整条流水线全自动运行——不用点屏幕，不用划手机。拍完照，笔放纸上，听就行了。
+---
 
 ## 系统架构
 
-每次拍照后发生的事情：
+```
+小米眼镜 — 拍试卷照片
+  → 蓝牙 → 小米眼镜 app（照片暂存在 app 的相册）
+眼镜_纯导入.macro — MacroDroid 每 3 秒点一次「导入」按钮
+  → 照片落到 /sdcard/DCIM/XiaomiGlass/IMG*.jpg
+上传文件_azure.macro — FileChangedTrigger 监视该目录
+  → ShellScript：
+      1-3. curl Gemini 3 Flash Preview（thinkingLevel=high）解题
+      4.   curl Azure Speech REST（westus2）合成 mp3
+      5.   验证 mp3 完整
+  → PlaySoundAction 播放 /storage/emulated/0/MacroDroid/tts_output.mp3
+  → 眼镜骨传导扬声器响起来
+```
 
-没有需要维护的云服务器。没有需要开发的 app。只有两个 API 调用，由手机上的一个 shell 脚本串起来。
+按下快门到第一个音节出来：约 15-25 秒。没有云服务器、没有 app 要装——就两个 MacroDroid 宏 + 一段 shell 脚本。
 
-## 为什么纯音频？为什么不显示在屏幕上？
+---
 
-这是整个系统中最重要的设计决策，没有商量的余地。
+## 关键技术选择
 
-**目前市面上所有带屏幕的智能眼镜都有漏光问题。** 从正面看也许没事，但镜片背面会发光。坐在你后面或旁边的人一眼就能看到那个光。在教室里、考场上，任何你需要看起来正常的场合——一眼就暴露了。没有例外，贵的不行，便宜的也不行，全都漏光。
+### 视觉模型：Gemini 3 Flash Preview，`thinkingLevel: high`
 
-纯音频通过眼镜扬声器播放**完全不可见**。眼镜看起来就是普通眼镜，因为它本来就长得像普通眼镜（这点小米做得不错）。打开隐私模式，音量调低，紧挨着你坐的人也听不到任何声音。
+在同一组选择题照片上跑了 60 轮 head-to-head：
 
-纯音频不是妥协。它是唯一真正可行的方案。
+| 模型 | 60 轮全部稳定的比例 | 备注 |
+|---|---|---|
+| **Gemini 3 Flash** | **58%** | 同一张图选项稳定。对正在进行的考试照片不会触发拒答。 |
+| GPT-5.5 | 38% | 漂移：同一个字母编号、不同的选项内容（B platyhelminth → B annelid → B amnion）。对边界情况会触发自带的「I won't help with active exams」内容护栏。 |
 
-## 硬件需求
+成本上 Gemini 输出 token 也便宜约 30%（~100 vs ~1000——GPT-5 把推理过程藏在 `completion_tokens` 里收钱）。
 
-| What / 什么 | Why / 为什么 |
-|------|------|
-| **Xiaomi AI Glass** (any model with a camera) | Takes the photo that kicks off the entire pipeline. 拍下触发整个流水线的照片。 |
-| **Android phone** | Runs MacroDroid, executes the shell script, makes the API calls. 运行 MacroDroid，执行 shell 脚本，发起 API 调用。 |
-| **Earbuds** (optional) | The glasses' built-in speakers work great at low volume. Pair Bluetooth earbuds if you want even more privacy. 眼镜自带扬声器在低音量下效果很好。如果想要更高隐蔽性可以配蓝牙耳机。 |
+`thinkingLevel: high` 平均 12.2 秒（60 轮 4.5-28.7 秒）。`medium` 快约 30%、清晰图片下答案质量一致。如果你的图片很干净可以降到 medium；默认 high 是因为教室照明、桌面杂物多的时候它给的稳定性值得这点延迟。
 
-## 软件需求
+### TTS：Azure Speech REST 直连，`zh-CN-XiaoxiaoNeural`，`rate=-25%`
 
-| What / 什么 | Why / 为什么 |
-|------|------|
-| **MacroDroid** (Android) | Watches the photo folder, triggers the script, plays the audio. Free tier is enough. 监控照片文件夹，触发脚本，播放音频。免费版就够了。 |
-| **curl** on the phone | Makes the API calls. Get it via **Termux** (no root needed) or it comes pre-installed on rooted phones. 发起 API 调用。通过 Termux 获取（不需要 root），或者 root 过的手机自带。 |
-| **小米眼镜 app** (Xiaomi Glasses) | The official companion app — needed to import photos from glasses to phone storage. 官方配套 app——用于把照片从眼镜导入手机存储。 |
+500 字符的中英混合答案 head-to-head：
 
-## API 密钥
+| 引擎 | 延迟 | 质量 | 备注 |
+|---|---|---|---|
+| **Azure Speech REST** | **~1 秒** 端到端（Mac → westus2） | 每个字都读 | 赢家。F0 免费档每月 50 万字符。学生 $100 抵用券走 S0 大约够 6M 字符——按日常用量 10 年用不完。 |
+| edge-tts（非官方） | ~1.25 秒 | 同款声学模型 | 免费但走的是 Edge 浏览器内部接口，没有 SLA。 |
+| OpenAI gpt-4o-mini-tts（Coral） | 500 字符 ~14 秒 | 自然，但随机 | 长文本偶尔会跳过几段静音。付费。 |
+| Piper 本地（zh_CN-huayan-medium） | 本地 | 中英混合直接拉胯 | 英文/公式段会被静默丢掉。100 秒的内容只生成 63 秒音频。 |
+| macOS `say`（Tingting） | 本地 | 还行 | 只能 Mac 用，桌面测试用。 |
 
-你只需要两个 API 密钥，仅此而已。
+**为什么传统 TTS 在听写场景里赢过 LLM-based TTS。** LLM 出现之前的 TTS（VITS、FastSpeech2 + HiFi-GAN、Tacotron2）的设计目标就是稳定——输入每个字符，输出对应每个字符。Azure Neural TTS 底层就是 FastSpeech2 + HiFi-GAN。LLM-based TTS（gpt-4o-mini-tts、Bark、VALL-E）听感更自然，但本质是把音频当生成式 codec 序列建模，输出是随机的，偶尔会丢字。听写场景必须把每个数字、每个变量名都读出来——传统神经 TTS 才是正确答案。
 
-| Key / 密钥 | Where to get it / 在哪里获取 | Cost / 费用 |
-|-----|-----------------|------|
-| **Gemini API Key** | [Google AI Studio](https://aistudio.google.com/apikey) | Free tier available / 有免费额度 |
-| **OpenAI API Key** | [OpenAI Platform](https://platform.openai.com/api-keys) | Pay-per-use, TTS is cheap / 按量计费，TTS 很便宜 |
+`rate=-25%` 把语速降到方便边听边写的节奏。
 
-把它们直接粘贴到 MacroDroid shell 脚本里（替换 `YOUR_..._HERE` 占位符），或者在使用调试工具时设置为环境变量。
+### 图片路径：原图直接送 Gemini
+
+我们之前做了 `paper-extractor/`——一套 OpenCV 流水线，找出页面、做透视矫正、把非纸像素涂白用于隐私保护。在 38 张样本上平均遮罩了 23% 的画面。视觉上没问题，但偶尔会把题目内容也裁掉（评估集里的 #27、#33 都被切了）。
+
+最初做隐私遮罩是为了不让 LLM 看到周围环境。但 Gemini 没有 GPT-5.5 的「不帮考试」内容护栏，遮罩这一步现在不是必需的了。`paper-extractor/` 作为可选的进阶模块保留，主流程直接用原图。
+
+---
 
 ## 目录结构
 
 ```
 glasses-auto-answer/
-├── README.md                        ← You are here / 你在这里
 ├── android-scripts/
-│   └── study_dictation_full.sh      ← The production shell script that runs on Android
-│                                       在 Android 上实际运行的生产脚本
+│   └── study_dictation_full.sh   # 一体化脚本：Gemini → Azure → mp3
 ├── macrodroid/
-│   └── setup-guide.md               ← Step-by-step MacroDroid setup for complete beginners
-│                                       面向零基础用户的 MacroDroid 配置指南
-├── debug-tool/
-│   ├── README.md                    ← Debug tool docs / 调试工具文档
-│   ├── app.py                       ← Python web server for prompt tuning + TTS preview
-│   │                                   用于调试 prompt 和试听 TTS 的 Python Web 服务器
-│   ├── run.sh                       ← Quick launcher / 快速启动脚本
+│   ├── 眼镜_纯导入.macro          # 宏 1：每 3 秒点「导入」
+│   ├── 上传文件_azure.macro       # 宏 2：监视新照片，跑脚本，播放音频
+│   ├── setup-guide.md            # 配置指南
+│   └── setup-guide_cn.md
+├── prompts/
+│   └── gemini-prompt.md          # Gemini prompt 拆解说明
+├── debug-tool/                    # 本地 web 调试 UI
+│   ├── app.py                    # 在电脑上调用 Gemini + Azure
 │   └── static/
-│       ├── index.html               ← Web UI / 网页界面
-│       ├── app.js                   ← Frontend logic / 前端逻辑
-│       └── styles.css               ← Styling / 样式
-└── prompts/
-    ├── gemini-prompt.md             ← The Gemini prompt, documented and explained
-    │                                   Gemini prompt 的文档化说明
-    └── tts-instructions.md          ← The TTS system instructions, documented and explained
-                                       TTS 系统指令的文档化说明
+└── paper-extractor/               # 可选：CV 隐私遮罩 + 裁纸
 ```
 
-## 快速链接
+---
 
-- **[MacroDroid Setup Guide](macrodroid/setup-guide.md)** — Complete beginner walkthrough for setting up the two macros on your phone. Don't know what MacroDroid is? Start here.
-  手机上配置两个宏的完整新手教程。不知道 MacroDroid 是什么？从这里开始。
+## 部署
 
-- **[Gemini Prompt Documentation](prompts/gemini-prompt.md)** — The prompt that makes this whole thing work, broken down section by section with explanations.
-  让这一切运转的 prompt，逐节拆解并附有解释。
+1. 申请 [Azure Speech key](https://portal.azure.com)（Free F0 档够用，region 选 `westus2` 或离你近的）。
+2. 申请 [Gemini API key](https://aistudio.google.com/apikey)。
+3. Android 上装 MacroDroid（免费版即可）和小米眼镜 app。
+4. 把 [`macrodroid/眼镜_纯导入.macro`](macrodroid/眼镜_纯导入.macro) 和 [`macrodroid/上传文件_azure.macro`](macrodroid/上传文件_azure.macro) 导入 MacroDroid。
+5. 打开第二个宏的 shell 脚本动作，把 `REPLACE_WITH_YOUR_GEMINI_API_KEY` 和 `REPLACE_WITH_YOUR_AZURE_KEY` 替换成你的真 key。
+6. 跟着 [MacroDroid 配置指南](macrodroid/setup-guide_cn.md) 走一遍 ColorOS / OPPO 权限清单——多数人栽在前台服务通知那一步。
 
-- **[TTS Instructions Documentation](prompts/tts-instructions.md)** — How we tell OpenAI's voice model to read like a patient teacher.
-  我们如何让 OpenAI 的语音模型像一个有耐心的老师一样朗读。
+冒烟测试：在小米眼镜 app 里停在「导入」对话框界面，用眼镜拍一张照，等 15-25 秒，听。
 
-- **[Debug Tool](debug-tool/README_CN.md)** — Desktop web UI for tuning prompts and testing TTS without touching your phone.
-  桌面端网页工具，用于在不碰手机的情况下调试 prompt 和测试 TTS。
+---
 
-- **[Shell Script](android-scripts/study_dictation_full.sh)** — The actual script that runs on Android. Read it to understand exactly what happens when you take a photo.
-  实际在 Android 上运行的脚本。读一下就知道拍照后到底发生了什么。
+## 部署前先在电脑上调 prompt
 
-## Prompt 简述
+[debug-tool/](debug-tool/) 是本地的 web 调试界面。拖一张样本图进去，在浏览器里改 prompt，发给 Gemini，再发给 Azure，听效果。比每次改完都重新粘贴脚本到 MacroDroid 快得多。它从环境变量或 `~/.azure-tts.env` 读 Azure 凭据。
 
-Gemini prompt 是整个系统的灵魂。它同时做三件事，经过了大量痛苦的迭代才调好：
+```bash
+cd debug-tool
+GEMINI_API_KEY=... AZURE_SPEECH_KEY=... AZURE_SPEECH_REGION=westus2 python3 app.py
+# 浏览器打开 http://127.0.0.1:8765
+```
 
-1. **Solves the problem** — reads the photo, identifies each question, works through the full solution to get maximum marks.
-   **解题** ——读取照片，识别每道题，完整推导解答过程以拿满分。
+---
 
-2. **Formats for dictation** — outputs the answer in a spoken-word format designed to be written down verbatim. No math symbols, no markdown. Chinese numbers read digit-by-digit. Single-letter variables prefixed with "字母" so TTS doesn't skip them. Pauses marked with punctuation.
-   **格式化为听写格式** ——以口述格式输出答案，可以逐字抄写。没有数学符号，没有 markdown。中文数字逐位读。单字母变量前加"字母"防止 TTS 跳过。用标点标记停顿。
+## 关于 Gemini prompt
 
-3. **Stays within TTS limits** — keeps output under 3500 characters (the script enforces a hard limit at 3900) so OpenAI TTS processes it cleanly.
-   **控制在 TTS 限制内** ——输出控制在 3500 字符以内（脚本硬限制 3900），确保 OpenAI TTS 能正常处理。
+输出是给 TTS 听的，不是给屏幕看的。这个 prompt 同时干三件事：
 
-TTS 指令告诉 OpenAI 的语音模型像一个有耐心的老师一样朗读：缓慢、清晰，题目之间有停顿，专业术语用自然的英文发音。
+1. 把题做对。
+2. 用一种让 TTS 不会跳字的格式把答案写出来——单字母变量加「字母」前缀，数字和单位之间加逗号，连续变量之间用「乘以」隔开。
+3. 控制长度——Azure 没有硬上限，但短一点听起来快一点。
 
-完整的 prompt 拆解见 [prompts/gemini-prompt.md](prompts/gemini-prompt.md) 和 [prompts/tts-instructions.md](prompts/tts-instructions.md)。
+每条规则都是因为没这条规则的时候出过错。完整拆解见 [`prompts/gemini-prompt.md`](prompts/gemini-prompt.md)。
 
-*为了解决一个真实的问题而构建：当你需要看起来正常时，听到答案比看到答案更好。*
+---
+
+*为了一个真实的问题做的：当你需要看起来正常时，听到答案比看到答案更好。*

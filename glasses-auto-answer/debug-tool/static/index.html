@@ -50,6 +50,13 @@
             <span id="imageName">未选择文件</span>
             <span id="imageMeta">支持 jpg / png / webp</span>
           </div>
+          <div class="toolbar" id="preprocessRow" hidden>
+            <div class="stats"><span id="preprocessStatus">未预处理</span></div>
+            <div class="button-row">
+              <button id="preprocessButton" class="ghost-button" type="button">预处理（裁纸张）</button>
+              <button id="restoreOriginalButton" class="ghost-button" type="button" hidden>还原原图</button>
+            </div>
+          </div>
         </section>
 
         <section class="card card-editor">
@@ -86,11 +93,14 @@
           <div class="section-title">
             <div>
               <p class="kicker">朗读</p>
-              <h2>TTS Instructions</h2>
+              <h2>Azure Speech TTS</h2>
             </div>
-            <button id="resetTtsButton" class="ghost-button" type="button">恢复默认</button>
+            <span class="ghost-button" style="cursor: default;">SSML prosody · zh-CN</span>
           </div>
-          <textarea id="ttsInput" class="editor editor-medium" spellcheck="false"></textarea>
+          <p class="hero-copy" style="margin: 0 0 12px;">
+            把 Gemini 输出直接送到 Azure Speech REST API（westus2）。zh-CN-XiaoxiaoNeural，
+            rate=-25%。Azure 的 FastSpeech2 + HiFi-GAN pipeline 会逐字读出，不会跳字。
+          </p>
           <div class="toolbar">
             <div class="stats"><span id="ttsStats">0 字</span></div>
             <div class="button-row">
@@ -101,7 +111,7 @@
           <audio id="audioPlayer" controls preload="none"></audio>
           <div class="info-row">
             <span id="ttsStatus">等待音频</span>
-            <span>Voice: <strong id="voiceLabel">coral</strong></span>
+            <span>Voice: <strong id="voiceLabel">zh-CN-XiaoxiaoNeural</strong></span>
           </div>
         </section>
       </main>

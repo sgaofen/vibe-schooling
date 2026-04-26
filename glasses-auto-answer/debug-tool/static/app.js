@@ -2,6 +2,9 @@ const state = {
   imageName: "",
   imageMimeType: "",
   imageBase64: "",
+  // Snapshot of the originally-selected image so 预处理 can be undone.
+  originalMimeType: "",
+  originalBase64: "",
   audioUrl: "",
   defaults: null,
 };
@@ -13,6 +16,10 @@ const elements = {
   previewEmpty: document.querySelector("#previewEmpty"),
   imageName: document.querySelector("#imageName"),
   imageMeta: document.querySelector("#imageMeta"),
+  preprocessRow: document.querySelector("#preprocessRow"),
+  preprocessStatus: document.querySelector("#preprocessStatus"),
+  preprocessButton: document.querySelector("#preprocessButton"),
+  restoreOriginalButton: document.querySelector("#restoreOriginalButton"),
   promptInput: document.querySelector("#promptInput"),
   promptStats: document.querySelector("#promptStats"),
   geminiButton: document.querySelector("#geminiButton"),
@@ -20,7 +27,6 @@ const elements = {
   outputStats: document.querySelector("#outputStats"),
   copyOutputButton: document.querySelector("#copyOutputButton"),
   geminiStatus: document.querySelector("#geminiStatus"),
-  ttsInput: document.querySelector("#ttsInput"),
   ttsStats: document.querySelector("#ttsStats"),
   ttsButton: document.querySelector("#ttsButton"),
   exportButton: document.querySelector("#exportButton"),
@@ -31,7 +37,6 @@ const elements = {
   ttsModelLabel: document.querySelector("#ttsModelLabel"),
   voiceLabel: document.querySelector("#voiceLabel"),
   resetPromptButton: document.querySelector("#resetPromptButton"),
-  resetTtsButton: document.querySelector("#resetTtsButton"),
 };
 
 function updateCount(target, value) {
@@ -63,13 +68,31 @@ async function loadDefaults() {
   }
   state.defaults = await response.json();
   elements.promptInput.value = state.defaults.geminiPrompt;
-  elements.ttsInput.value = state.defaults.ttsInstructions;
   elements.geminiModelLabel.textContent = state.defaults.geminiModel;
-  elements.ttsModelLabel.textContent = state.defaults.ttsModel;
+  // ttsModel from server is "Azure Speech"; show region for clarity.
+  const ttsLabel = state.defaults.ttsRegion && state.defaults.ttsRegion !== "(unset)"
+    ? `${state.defaults.ttsModel} · ${state.defaults.ttsRegion}`
+    : state.defaults.ttsModel;
+  elements.ttsModelLabel.textContent = ttsLabel;
   elements.voiceLabel.textContent = state.defaults.ttsVoice;
   updateCount(elements.promptStats, elements.promptInput.value);
-  updateCount(elements.ttsStats, elements.ttsInput.value);
   updateCount(elements.outputStats, elements.outputInput.value);
+
+  // 7-char count placeholder reused for the Gemini-output card.
+  // (TTS instructions card is gone — Azure SSML doesn't take separate prompts.)
+  if (elements.ttsStats) {
+    elements.ttsStats.textContent = state.defaults.ttsConfigured
+      ? "Azure 已就绪"
+      : "未配置 Azure 凭据";
+  }
+
+  // Reveal the 预处理 row only if EXTRACTOR_URL is configured server-side.
+  if (state.defaults.extractorEnabled) {
+    elements.preprocessRow.hidden = false;
+    elements.preprocessStatus.textContent = `Extractor: ${state.defaults.extractorUrl}`;
+  } else {
+    elements.preprocessRow.hidden = true;
+  }
 }
 
 function applySelectedFile(file) {
@@ -84,12 +107,74 @@ function applySelectedFile(file) {
     const result = String(reader.result || "");
     const commaIndex = result.indexOf(",");
     state.imageBase64 = commaIndex >= 0 ? result.slice(commaIndex + 1) : "";
+    state.originalBase64 = state.imageBase64;
+    state.originalMimeType = state.imageMimeType;
     elements.previewImage.src = result;
     elements.previewImage.hidden = false;
     elements.previewEmpty.hidden = true;
+    if (elements.restoreOriginalButton) elements.restoreOriginalButton.hidden = true;
+    if (elements.preprocessStatus && state.defaults?.extractorEnabled) {
+      elements.preprocessStatus.textContent = `已加载原图（${(file.size / 1024).toFixed(0)} KB）`;
+    }
     setStatus(`已加载图片：${file.name}`);
   };
   reader.readAsDataURL(file);
+}
+
+async function runPreprocess() {
+  if (!state.imageBase64) {
+    window.alert("请先选择一张图片。");
+    return;
+  }
+  setBusy(elements.preprocessButton, true, "预处理（裁纸张）");
+  elements.preprocessStatus.textContent = "调用 extractor 中...";
+  setStatus("正在把图片送到 paper-extractor 做 Stage A 预处理...");
+
+  try {
+    const response = await fetch("/api/preprocess", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        imageBase64: state.originalBase64 || state.imageBase64,
+        imageMimeType: state.originalMimeType || state.imageMimeType,
+      }),
+    });
+    const payload = await response.json();
+    if (!response.ok) {
+      throw new Error(payload.detail || payload.error || "预处理失败");
+    }
+
+    state.imageBase64 = payload.imageBase64;
+    state.imageMimeType = payload.imageMimeType || "image/jpeg";
+    const dataUrl = `data:${state.imageMimeType};base64,${state.imageBase64}`;
+    elements.previewImage.src = dataUrl;
+
+    const sizeKB = ((payload.outputBytes || 0) / 1024).toFixed(0);
+    const summary = [
+      `method=${payload.method || "?"}`,
+      payload.originalSize ? `${payload.originalSize} → ${payload.outputSize || "?"}` : null,
+      `${sizeKB} KB`,
+    ].filter(Boolean).join(" · ");
+    elements.preprocessStatus.textContent = `已预处理 · ${summary}`;
+    elements.restoreOriginalButton.hidden = false;
+    setStatus("预处理完成，可以发送到 Gemini。");
+  } catch (error) {
+    elements.preprocessStatus.textContent = "预处理失败";
+    setStatus("预处理失败");
+    window.alert(error.message);
+  } finally {
+    setBusy(elements.preprocessButton, false, "预处理（裁纸张）");
+  }
+}
+
+function restoreOriginal() {
+  if (!state.originalBase64) return;
+  state.imageBase64 = state.originalBase64;
+  state.imageMimeType = state.originalMimeType;
+  elements.previewImage.src = `data:${state.imageMimeType};base64,${state.imageBase64}`;
+  elements.preprocessStatus.textContent = "已还原原图";
+  elements.restoreOriginalButton.hidden = true;
+  setStatus("已还原原图。");
 }
 
 async function runGemini() {
@@ -140,16 +225,13 @@ async function runTts() {
 
   setBusy(elements.ttsButton, true, "播放 TTS");
   elements.ttsStatus.textContent = "生成音频中";
-  setStatus("正在向 OpenAI TTS 生成音频...");
+  setStatus("正在向 Azure Speech 生成音频...");
 
   try {
     const response = await fetch("/api/tts", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        text,
-        instructions: elements.ttsInput.value,
-      }),
+      body: JSON.stringify({ text }),
     });
 
     const contentType = response.headers.get("Content-Type") || "";
@@ -184,7 +266,6 @@ async function exportScripts() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         prompt: elements.promptInput.value,
-        instructions: elements.ttsInput.value,
       }),
     });
 
@@ -254,10 +335,6 @@ function bindEvents() {
     updateCount(elements.promptStats, elements.promptInput.value);
   });
 
-  elements.ttsInput.addEventListener("input", () => {
-    updateCount(elements.ttsStats, elements.ttsInput.value);
-  });
-
   elements.outputInput.addEventListener("input", () => {
     updateCount(elements.outputStats, elements.outputInput.value);
   });
@@ -266,19 +343,18 @@ function bindEvents() {
   elements.ttsButton.addEventListener("click", runTts);
   elements.exportButton.addEventListener("click", exportScripts);
   elements.copyOutputButton.addEventListener("click", copyOutput);
+  if (elements.preprocessButton) {
+    elements.preprocessButton.addEventListener("click", runPreprocess);
+  }
+  if (elements.restoreOriginalButton) {
+    elements.restoreOriginalButton.addEventListener("click", restoreOriginal);
+  }
 
   elements.resetPromptButton.addEventListener("click", () => {
     if (!state.defaults) return;
     elements.promptInput.value = state.defaults.geminiPrompt;
     updateCount(elements.promptStats, elements.promptInput.value);
     setStatus("Gemini Prompt 已恢复默认。");
-  });
-
-  elements.resetTtsButton.addEventListener("click", () => {
-    if (!state.defaults) return;
-    elements.ttsInput.value = state.defaults.ttsInstructions;
-    updateCount(elements.ttsStats, elements.ttsInput.value);
-    setStatus("TTS Instructions 已恢复默认。");
   });
 }
 

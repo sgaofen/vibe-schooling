@@ -2,176 +2,122 @@
 
 > **[中文版](setup-guide_cn.md)**
 
-This guide assumes you've never used MacroDroid before. Every step tells you exactly what to tap and what to fill in. Just follow along.
+End state: photo through the glasses → 15-25s wait → answer plays in your ear.
 
 ---
 
 ## Prerequisites
 
-1. **MacroDroid** installed from Google Play (free version works fine)
-2. **Xiaomi Glasses app** (小米眼镜) installed and paired with your glasses
-3. Your **Gemini API key** and **OpenAI API key** ready to paste
-4. MacroDroid has all necessary permissions: accessibility, storage, notification, overlay, battery optimization disabled
+1. **MacroDroid** from Google Play (free version works).
+2. **小米眼镜 app** installed and paired with your glasses.
+3. **API keys**: Gemini + Azure Speech (see below).
+4. **Permissions**: accessibility, storage, notifications, overlay, battery optimization disabled. Plus the ColorOS/OPPO checklist further down if you're on Oppo/Realme/OnePlus.
 
-### Getting API Keys
+### Get the API keys
 
-| Key | Where to get it | Cost |
-|-----|----------------|------|
-| Gemini API Key | [Google AI Studio](https://aistudio.google.com/apikey) → click "Create API Key" | Free tier available |
-| OpenAI API Key | [OpenAI Platform](https://platform.openai.com/api-keys) → click "Create new secret key" | Pay-per-use, TTS is cheap |
+| Key | Where | Cost |
+|-----|-------|------|
+| **Gemini API key** | [Google AI Studio](https://aistudio.google.com/apikey) → Create API key | Free tier covers typical use |
+| **Azure Speech key** | [portal.azure.com](https://portal.azure.com) → create a Speech resource (region: `westus2` or closer) → grab `KEY 1` | F0 free tier = 500K chars/month. Way more than you need. |
 
-Save them somewhere — you'll need them shortly.
-
----
-
-## Overview
-
-You'll create exactly two macros:
-
-| Macro | What it does |
-|-------|-------------|
-| **眼镜** (Glasses Control) | Auto-imports photos from glasses to phone storage every 25 seconds |
-| **上传文件** (Upload File) | Detects new photos, runs the AI pipeline, plays the answer |
-
-Here's what it looks like when both macros are set up:
-
-![MacroDroid Overview](../../docs/images/macrodroid-overview.jpg)
+For Azure: when you create the resource, pick **F0 (Free)** as the pricing tier. If you ever blow past 500K chars/month, change the resource to S0 — same key, no script change needed.
 
 ---
 
-## Step 1: Create the "眼镜" (Glasses) Macro
+## What you're building
 
-This macro works around a quirk of the Xiaomi Glasses app: photos taken with the glasses don't automatically appear in phone storage. You have to manually import them through the app. This macro automates that import by simulating UI taps every 25 seconds.
+Two macros:
 
-### How to set it up
-
-1. Open MacroDroid
-2. Tap the **+** button in the bottom right to create a new macro
-3. Name it: **眼镜**
-
-### Trigger
-
-4. Tap **+** in the Trigger section
-5. Select **Timer** → **Fixed Time Interval**
-6. Set the interval to **00:00:25** (25 seconds)
-7. Confirm
-
-### Actions (add in this exact order)
-
-8. Tap **+** in the Actions section and add these **8 actions** in order:
-
-| # | Action | Configuration | Purpose |
-|---|--------|--------------|---------|
-| 1 | **UI Interaction** → Gesture | Duration: 250ms, From: (500, 2000), To: (500, 1000) | Swipe up to dismiss overlays |
-| 2 | **Launch App** | App: "小米眼镜", check "Restart" | Open the glasses app |
-| 3 | **Wait** | 5 seconds | Let the app fully load |
-| 4 | **UI Interaction** → Click | Target text: "取消" (Cancel) | Dismiss sync dialog |
-| 5 | **Wait** | 1 second | Brief pause |
-| 6 | **UI Interaction** → Click | Target text: "导入" (Import) | Import photos to phone storage |
-| 7 | **Wait** | 4 seconds | Let the import complete |
-| 8 | **Go Home** | — | Return to home screen |
-
-### Constraints
-
-9. None — leave empty
-
-### Save
-
-10. Tap the save button in the top right
-
-### What it looks like
-
-![Glasses Macro](../../docs/images/macrodroid-glasses-macro.jpg)
-
-### Notes
-
-- **The coordinates (500, 2000) → (500, 1000) may need adjustment** for your phone's screen resolution. The idea is a simple swipe-up gesture in the center of the screen. Test it with MacroDroid's gesture tester first.
-- **The 25-second interval is tunable.** Shorter = faster response but more battery drain. Longer = more delay. 25 seconds is a good sweet spot.
-- **Disable this macro when you're not using it** to save battery.
+| Macro | Purpose |
+|-------|---------|
+| `眼镜_纯导入.macro` | Taps the 「导入」 button in the 小米眼镜 app every 3 seconds, so photos move from glasses → phone storage |
+| `上传文件_azure.macro` | Watches the photo folder. New photo → run shell script (Gemini + Azure) → play the resulting mp3 |
 
 ---
 
-## Step 2: Create the "上传文件" (Upload File) Macro
+## Step 1: Edit the shell script
 
-This is the real one — the macro that runs the AI pipeline. When a new photo lands in the glasses folder, this macro fires a shell script that sends it to Gemini, gets the answer, converts it to speech, and plays it.
+Before importing, open [`android-scripts/study_dictation_full.sh`](../android-scripts/study_dictation_full.sh) in any text editor. At the top:
 
-### How to set it up
+```sh
+api_key="REPLACE_WITH_YOUR_GEMINI_API_KEY"
+TTS_KEY="REPLACE_WITH_YOUR_AZURE_KEY"
+TTS_REGION="westus2"
+TTS_VOICE="zh-CN-XiaoxiaoNeural"
+TTS_RATE="-25%"
+```
 
-1. Tap **+** to create a new macro
-2. Name it: **上传文件**
+Paste your real keys in. Change `TTS_REGION` if you picked a different Azure region. Save.
 
-### Trigger
-
-3. Tap **+** in the Trigger section
-4. Select **File** → **File Changed**
-5. Path: `/storage/emulated/0/DCIM/XiaomiGlass/IMG*`
-6. Check all event types: **Created**, **Deleted**, **Updated**
-7. Confirm
-
-### Actions
-
-Add **two actions**:
-
-**Action 1: Shell Script**
-
-8. Select **Device Actions** → **Shell Script**
-9. Execution method: select **Not Rooted** (MacroDroid's built-in shell already includes curl — no root or Termux needed)
-10. Paste the **entire script** from `android-scripts/study_dictation_full.sh` into the script content box
-11. **Replace the API key placeholders** at the top of the script with your real keys:
-    - `api_key="YOUR_GEMINI_API_KEY_HERE"` → your Gemini key
-    - `OPENAI_KEY="YOUR_OPENAI_API_KEY_HERE"` → your OpenAI key
-
-**Action 2: Play Audio**
-
-12. Tap **+** to add another action
-13. Select **Media** → **Play Audio**
-14. File: `tts_output.mp3` (located at `/storage/emulated/0/MacroDroid/tts_output.mp3`)
-
-### Constraints
-
-15. None — leave empty
-
-### Save
-
-16. Tap save
-
-### What it looks like
-
-![Upload File Macro](../../docs/images/macrodroid-upload-macro.jpg)
-
-![Shell Script](../../docs/images/macrodroid-shell-script.jpg)
+> The same script body lives inside the `m_script` field of `macrodroid/上传文件_azure.macro`. You can edit it in the .macro JSON before importing, or edit it inside MacroDroid after importing — both work. Editing inside MacroDroid is usually less error-prone.
 
 ---
 
-## Step 3: Test
+## Step 2: Import the two macros
 
-Once both macros are set up:
+1. Copy `macrodroid/眼镜_纯导入.macro` and `macrodroid/上传文件_azure.macro` to your phone (cloud sync, USB, anything).
+2. In MacroDroid: **Settings → Import / Export → Import** → pick each file.
+3. After importing 上传文件_azure: open it, tap the Shell Script action, and paste your real `api_key` and `TTS_KEY` in.
+4. Toggle both macros on.
 
-1. **Enable both macros** in MacroDroid (toggle them on)
-2. **Take a photo** through the glasses of any homework problem
-3. **Wait ~30 seconds** (25s for the import cycle + a few seconds for the AI pipeline) — you should hear the answer play through your glasses speakers
+The macros come pre-wired:
 
-### Troubleshooting
+- `眼镜_纯导入` triggers every 3s, simulates a click on the 「导入」 button by text match. Stay on the import dialog screen in the 小米眼镜 app while using it.
+- `上传文件_azure` watches `/storage/emulated/0/DCIM/XiaomiGlass/IMG*` (Created/Modified/Deleted), runs the script, then plays `/storage/emulated/0/MacroDroid/tts_output.mp3`.
 
-If nothing happens, check these debug files on your phone:
+---
+
+## Step 3: ColorOS / OPPO permission checklist
+
+OPPO's ColorOS aggressively kills background apps. If you're on Oppo/Realme/OnePlus, do **all of these**:
+
+- **Settings → Battery → Battery Optimization → MacroDroid: Don't optimize / Unrestricted**
+- **Settings → Apps → MacroDroid → Auto-launch: Allow**
+- **Settings → Apps → MacroDroid → Background activity: Allow**
+- **Settings → Battery → Smart background freeze: OFF** (or whitelist MacroDroid)
+- **Recent apps screen → drag MacroDroid down → tap the lock icon** (locks it against task killing)
+- **MacroDroid → Settings → Notification bar → Display permanent notification: ON** ← **the foreground-service exemption. This is the one most people miss.**
+- **Developer options**: "Don't keep activities" OFF, "Background process limit" = standard.
+- The 小米眼镜 app **also** needs background-launch + auto-launch permission. Otherwise rapid macro fires will get the *target* app frozen instead of the macro.
+
+If your audio randomly stops playing after 5-10 minutes idle, it's almost always one of the above.
+
+---
+
+## Step 4: Smoke test
+
+1. Open 小米眼镜 app, navigate to the import dialog (the one with the 「导入」 button visible). Stay on this screen.
+2. Verify both macros are enabled in MacroDroid.
+3. Take a photo through the glasses.
+4. Wait. Within ~3s the photo should move to phone storage. Within another ~12-22s the answer plays.
+
+Total: usually 15-25 seconds from shutter to first syllable.
+
+---
+
+## Troubleshooting
+
+If you don't hear audio, check these debug files on your phone:
 
 | File | What it tells you |
 |------|------------------|
-| `/sdcard/tts_error.txt` | TTS failures (most common issue) |
-| `/sdcard/gemini_output.txt` | What Gemini actually returned |
-| `/sdcard/gemini_response.json` | Raw Gemini API response |
-| `/sdcard/tts_http_status.txt` | HTTP status from OpenAI TTS |
-| `/sdcard/tts_curl_exit.txt` | curl exit code for TTS call |
-| `/sdcard/clean_text.txt` | The exact text sent to TTS |
-| `/sdcard/tts_input_length.txt` | Character count of TTS input |
+| `/sdcard/tts_error.txt` | Either Gemini didn't return text, or Azure rejected the request (bad key, wrong region, expired tier) |
+| `/sdcard/gemini_output.txt` | Exact text that Gemini returned |
+| `/sdcard/gemini_response.json` | Raw Gemini API response — useful when output is empty |
+| `/sdcard/tts_request.xml` | The SSML body sent to Azure |
 
-The most common failure is the TTS input being too long (over 3900 characters). If that happens, take photos of fewer questions at a time, or adjust the prompt for more concise output.
+Common causes:
+
+- **No audio + tts_error.txt empty** → Gemini key is wrong, or quota exhausted.
+- **tts_error.txt contains XML starting with `<?xml`** → Azure rejected. Likely a bad key, wrong region, or the resource is a non-Speech resource.
+- **mp3 plays but is cut off / silent** → MacroDroid's PlaySoundAction occasionally collides with the system media stream. Try re-saving the macro with a different audio stream selected.
+- **First photo works, then nothing** → ColorOS killed MacroDroid in the background. Re-do the permission checklist.
 
 ---
 
 ## Tips
 
-- **Battery**: The "眼镜" macro firing every 25 seconds uses some battery — expect maybe 5-10% extra drain over a 2-hour exam. Disable it when not in use.
-- **Do Not Disturb**: Enable DND mode so notification sounds don't interrupt audio playback.
-- **Volume**: Test the glasses speaker volume beforehand. Find the sweet spot where you can hear clearly but nobody else can. Privacy mode helps.
-- **Debug tool first**: Before deploying to your phone, use the [debug tool](../debug-tool/) on your computer to test with sample images. Much faster iteration.
+- **DND on**: avoid notification chimes punching holes in your audio.
+- **Volume**: test the glasses speaker volume in private first. There's a sweet spot — clearly audible to you, inaudible to whoever's next to you.
+- **Iterate on the prompt with the desktop debug tool first.** Editing prompts inside MacroDroid is painful. The [debug tool](../debug-tool/) lets you drag in a sample photo, edit the prompt, hit Azure, listen — all in a browser.
+- **Battery**: the 3-second import macro adds maybe 5-10% drain over a 2-hour exam. Disable both macros when you're not using them.

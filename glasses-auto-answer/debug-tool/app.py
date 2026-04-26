@@ -1,11 +1,15 @@
 #!/usr/bin/env python3
+import base64
 import io
 import json
+import mimetypes
 import os
 import re
 import urllib.error
 import urllib.request
+import uuid
 import zipfile
+from html import escape as xml_escape
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -23,95 +27,142 @@ GEMINI_ENDPOINT = (
     f"{GEMINI_MODEL}:generateContent?key={GEMINI_API_KEY}"
 )
 
-OPENAI_TTS_MODEL = "gpt-4o-mini-tts-2025-03-20"
-OPENAI_TTS_VOICE = "coral"
-OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "YOUR_OPENAI_API_KEY_HERE")
-OPENAI_TTS_ENDPOINT = "https://api.openai.com/v1/audio/speech"
+
+def _load_azure_credentials() -> tuple[str, str]:
+    """Pull AZURE_SPEECH_KEY + AZURE_SPEECH_REGION from env or ~/.azure-tts.env.
+
+    The fallback file matches the convention used by paper-extractor's TTS
+    helpers — keeps a single source of truth on the dev machine.
+    """
+    key = os.environ.get("AZURE_SPEECH_KEY", "").strip()
+    region = os.environ.get("AZURE_SPEECH_REGION", "").strip()
+    if key and region:
+        return key, region
+    cfg = Path.home() / ".azure-tts.env"
+    if cfg.exists():
+        for line in cfg.read_text(encoding="utf-8").splitlines():
+            m = re.match(r"^\s*([A-Z_]+)\s*=\s*(.+?)\s*$", line)
+            if not m:
+                continue
+            name, val = m.group(1), m.group(2).strip().strip("'").strip('"')
+            if name == "AZURE_SPEECH_KEY" and not key:
+                key = val
+            elif name == "AZURE_SPEECH_REGION" and not region:
+                region = val
+    return key, region
+
+
+AZURE_SPEECH_KEY, AZURE_SPEECH_REGION = _load_azure_credentials()
+AZURE_TTS_VOICE = os.environ.get("AZURE_TTS_VOICE", "zh-CN-XiaoxiaoNeural")
+AZURE_TTS_RATE = os.environ.get("AZURE_TTS_RATE", "-25%")
+AZURE_TTS_OUTPUT_FORMAT = "audio-24khz-48kbitrate-mono-mp3"
+
+
+def azure_tts_endpoint() -> str:
+    region = AZURE_SPEECH_REGION or "westus2"
+    return f"https://{region}.tts.speech.microsoft.com/cognitiveservices/v1"
+
+
+# Optional Stage A page-extractor (paper-extractor FastAPI service).
+# Leave blank to disable the "预处理" feature.
+EXTRACTOR_URL = os.environ.get("EXTRACTOR_URL", "").rstrip("/")
 
 DEFAULT_GEMINI_PROMPT = """你是我的学习听写助手。识别图片中的题目，解出每道题，输出能拿满分的完整答案。
 
-重要：输出将直接交给TTS语音合成朗读，我边听边写在试卷上。TTS对单个字母容易漏读，所以你必须用特殊格式确保每个字母都被读出来。
+输出将直接交给TTS语音朗读，我边听边写在试卷上。所以你的输出必须：简洁、直接、容易跟着写。
 
-===== TTS防漏读规则（最重要）=====
+===== 第一步：判断每道题（和每个小问）的题型 =====
 
-1. 单字母变量必须加前缀。所有单字母变量前面加上【字母】二字，让TTS不会跳过：
-字母w，字母q，字母n，字母R，字母T，字母P，字母V，字母E，字母S，字母G，字母H，字母C，字母m，字母v
+同一道大题的不同小问可能是不同题型，必须分别判断。
 
-2. 连续变量之间用【乘以】隔开，绝不连写：
-nRT 要说成：字母n，乘以，字母R，乘以，字母T
-PV 要说成：字母P，乘以，字母V
-绝不能写成 nRT 或 PV 让TTS自己读
+【选择题】有 A B C D E 选项
+→ 只说选哪个和选项内容。绝不展开计算。
+示例：第一题，选A，一点二，atm。
 
-3. 数字和单位之间必须加逗号停顿：
-八十六点三，j
-零点二九零，j per K
-零点五零，L atm
-二百九十八，K
-绝不能写成 八十六点三j（没有逗号TTS会吞掉单位）
+【计算题】需要写出公式和计算步骤
+→ 用下方的TTS公式格式，精简完整，每步用句号加【下一行】隔开。
 
-4. 每个公式步骤用句号结尾，创造停顿：
-字母w，等于，负的，字母n，乘以，字母R，乘以，字母T，乘以，ln，左括号，字母V下标二，除以，字母V下标一，右括号。
+【改错题】划掉错误词汇并替换
+→ 只说划掉什么、改成什么。
+示例：a小问，划掉 convergent，改成 homologous。
 
-5. 下标用【下标】加中文数字：
-V1 说成 字母V下标一
-V2 说成 字母V下标二
-Cp 说成 字母C下标p
-Pext 说成 字母P下标ext
+【画图题】要求画图、sketch、draw（包括曲线、柱状图、分布图等）
+→ 用中文描述怎么画，关键术语用英文。描述要具体到能直接照着画：位置、方向、形状、数值。
+示例：大种群那条线从零点五开始，在零点五附近小幅波动，基本水平。小种群那条线从零点五开始，大幅随机波动，最终到达一点零或者零点零。
+示例：第二个柱子，invasive species，画在零线下面。第三个柱子，elephant reintroduction，画在零线上面。
+示例：Species A 的曲线向左移动，peak 在 50 cm 左右。Species B 的曲线向右移动，peak 在 200 cm 左右。
 
-===== 语言规则 =====
+【填空题】
+→ 按顺序念答案。
+示例：第一个空，二七三，K。第二个空，零点零八二一，L atm per mol K。
 
-中文念的部分：
+【简答题】需要写完整句子回答
+→ 用自然英文念答案。数字用英文念。不用"字母"前缀，不用中文数字。
+示例：The large population maintains allele frequency near 0.5 because genetic drift has minimal effect. The small population experiences strong drift, causing frequency to fluctuate randomly and eventually fix or be lost.
+
+===== TTS公式格式（仅用于计算题的公式推导）=====
+
+简答题、改错题、画图题不要用这些规则。
+
+1. 单字母变量加【字母】前缀：字母w，字母q，字母n，字母R，字母T，字母P，字母V，字母E，字母S，字母G，字母H，字母C，字母m，字母v
+2. 连续变量用【乘以】隔开：nRT → 字母n，乘以，字母R，乘以，字母T
+3. 数字和单位之间加逗号：二九八，K。不能写成 二九八K
+4. 句号结尾创造停顿，句号后说【下一行】换行
+示例（复杂公式）：字母w，等于，负的，字母n，乘以，字母R，乘以，字母T，乘以，ln，左括号，字母V下标二，除以，字母V下标一，右括号。
+5. 标准态 ° 念 degree，下标 rxn 念 下标rxn：delta，字母H，degree，下标rxn
+6. 题目中的下标都要念：rxn、f、fus、p、ext等
+7. 同一题中同字母大小写都出现时，第一次标注大写或小写
+8. 数字逐位连写，内部不加任何标点：二九八点三七、一零二四、零点一二九、负三点五。错误示范：二，九，八，点，三，七（绝对禁止）
+9. 小数点用【点】，绝不用【占】
+10. 运算符用中文：加、减、乘以、除以、等于、负。绝不用 negative、plus、minus、equals
+11. 连接词用中文：所以、得到、代入
+12. 容易混淆的单位用中文：kJ念千焦，kg念千克，kPa念千帕
+13. 括号：左括号、右括号
+14. 次方：的平方、的立方
+15. 分数：二分之一、四分之三
+16. 科学计数法：三点零乘以一零的八次方
+17. 数学函数直接念英文不翻译：ln、log、sin、cos、tan、delta
+18. 单位念缩写不翻译全称：j不说joules，mol不说moles，L、Pa、atm、g、cm、K、degrees C
+19. 有单位的数值必须带单位
+20. 温度转换用273.15：二五，degrees C，加，二七三点一五，等于，二九八点一五，K
+
+===== 计算题核心原则 =====
+
+精简、完整、满分。每个字都是写在答题纸上的，没有废话。
+
+如果要求计算多个量，每个都给完整过程，不能只给最终结果。
+
+示例（熵变计算）：
+第一题。下一行。
+delta，字母S，等于，字母q下标rev，除以，字母T，等于，字母n，乘以，delta，字母H下标fus，除以，字母T。下一行。
+字母T，等于，负八九点五，加，二七三点一五，等于，一八三点六五，K。下一行。
+delta，字母S，等于，一点零零，mol，乘以，五三七零，j per mol，除以，一八三点六五，K，等于，二九点二四，j per K。
+
+示例（自由能计算）：
+delta，字母G，degree，等于，delta，字母H，degree，减，字母T，乘以，delta，字母S，degree。下一行。
+delta，字母G，degree，等于，负二二一七，千焦，减，二九八，K，乘以，零点一零一一，千焦 per K，等于，负二二四七点一，千焦。
+
+===== 格式规则 =====
+
 题号：第一题、第二题
-子问题：第一小问、第二小问（不要用 i ii iii）
-数字：九点九零、一百八十四、零点一二九、负三点五
-科学计数法：三点零乘以十的八次方
-运算符：加、减、乘以、除以、等于
-括号：左括号、右括号
-次方：的平方、的立方
-分数：二分之一、四分之三
-连接词：所以、得到、代入
+子问题：题目用 a b c 的说 a小问、b小问；用 i ii iii 的说 第一小问、第二小问；用 A B C 的说 大A、大B
 
-单位念缩写，不翻译成全称：
-j 不说 joules，kg 不说 kilograms，mol 不说 moles
-m per s 不说 meters per second
-L，Pa，N，W，Hz，atm，mL，g，kJ，cm，nm，K，degrees C
-
-数学函数直接念英文缩写不翻译：
-ln，log，sin，cos，tan，delta
-
-念英文的部分：
-变量名（带字母前缀）
-选择题填空题简答题的答案内容
-化学式和化学名词
-希腊字母念英文：delta，alpha，beta，gamma
-
-===== 题型输出规则 =====
-
-计算题：直接写解题步骤，精简但完整，能拿满分。不要说根据某某公式、由题意知这类解释。
-示例：第二题，第一小问。字母w，等于，负的，字母n，乘以，字母R，乘以，字母T，乘以，ln，左括号，字母V下标二，除以，字母V下标一，右括号。字母w，等于，负的，零点一零零，乘以，八点三一四，乘以，二百九十八，乘以，ln，左括号，一点七零，除以，一点二零，右括号。等于，负八十六点三，j。
-
-选择题：说选哪个，念该选项内容。
-示例：第五题，选B，the reaction is exothermic because delta H is negative。
-
-填空题：按顺序念答案。
-示例：第二题，第一个空，二百七十三，K。第二个空，零点零八二一，L atm per mol per K。
-
-简答题：念完整英文答案。
-示例：第一题。The equilibrium shifts to the right because increasing temperature favors the endothermic direction according to Le Chatelier principle.
-
-判断题：说 true 或 false，加理由。
-示例：第四题，false, because the boiling point increases with stronger intermolecular forces.
+计算题中绝不能切换成英文句式。运算符永远中文。
+简答题中用自然英文，不插入中文数字或字母前缀。
+画图题中用中文指导，关键英文术语保持英文。
 
 ===== 绝对禁止 =====
-不输出题目本身，只输出答案
-不输出任何数学符号
-不输出解释性废话
+不输出题目本身
+不输出数学符号（+−×÷=等）
 不输出 markdown 格式
+不在选择题中展开计算步骤
+不在简答题中使用TTS公式格式
+不用中文描述代替公式（如"反应物键能总和"）
 不连写多个变量字母
+不在数字内部加逗号或任何标点（二九八点三七，不是二，九，八，点，三，七）
+不输出解释性废话
 每个字都是要写在答题纸上的
 """
-
-DEFAULT_TTS_INSTRUCTIONS = """你是听写助手，逐字朗读文本让学生抄写。最重要的规则：绝不跳过任何文字，每一个字、每一个字母、每一个单位都必须读出来。遇到【字母】加单个英文字母时，清晰读出该字母。用清晰、缓慢、沉稳的语速朗读。每道题之间停顿两秒。逗号处短暂停顿，句号处停顿一秒。数字和单位之间的逗号也要停顿。遇到英文单词时自然切换为标准英文发音。整体节奏像老师在课堂上念题。"""
 
 
 def read_static_file(name: str) -> bytes:
@@ -156,23 +207,6 @@ def sanitize_prompt_for_android(prompt: str) -> str:
     return sanitized.replace("\n", "\\n")
 
 
-def sanitize_tts_instructions_for_android(instructions: str) -> str:
-    sanitized = normalize_newlines(instructions)
-    sanitized = sanitized.replace("\t", " ")
-    sanitized = sanitized.replace("\n", " ")
-    sanitized = re.sub(r" {2,}", " ", sanitized)
-    sanitized = sanitized.strip()
-
-    # The instructions string lives inside shell double quotes and must still be
-    # valid JSON after the shell removes one layer of escaping.
-    json_escaped = json.dumps(sanitized, ensure_ascii=False)[1:-1]
-    shell_safe = json_escaped.replace("\\", "\\\\")
-    shell_safe = shell_safe.replace('"', '\\"')
-    shell_safe = shell_safe.replace("$", "\\$")
-    shell_safe = shell_safe.replace("`", "\\`")
-    return shell_safe
-
-
 def build_gemini_script(prompt: str) -> str:
     safe_prompt = sanitize_prompt_for_android(prompt)
     return f"""#!/system/bin/sh
@@ -198,7 +232,7 @@ echo '"
     }}
   ],
   "generationConfig": {{
-    "maxOutputTokens": 8192,
+    "maxOutputTokens": 65536,
     "thinkingConfig": {{
       "includeThoughts": false,
       "thinkingLevel": "high"
@@ -213,31 +247,55 @@ curl -k -s -X POST \\
 """
 
 
-def build_tts_script(instructions: str) -> str:
-    safe_instructions = sanitize_tts_instructions_for_android(instructions)
+def build_tts_script() -> str:
+    """Generate the on-device Azure Speech REST call.
+
+    The script reads the Gemini text from the {{lv=ai_speak}} MacroDroid
+    variable, XML-escapes it, and POSTs SSML to Azure. Output goes straight to
+    the mp3 file MacroDroid plays.
+    """
     return f"""#!/system/bin/sh
-OPENAI_KEY="{OPENAI_API_KEY}"
-TEXT="{{lv=ai_speak}}"
+TTS_KEY="{AZURE_SPEECH_KEY or 'REPLACE_WITH_YOUR_AZURE_KEY'}"
+TTS_REGION="{AZURE_SPEECH_REGION or 'westus2'}"
+TTS_VOICE="{AZURE_TTS_VOICE}"
+TTS_RATE="{AZURE_TTS_RATE}"
+TTS_URL="https://${{TTS_REGION}}.tts.speech.microsoft.com/cognitiveservices/v1"
+
+ai_speak="{{{{lv=ai_speak}}}}"
+temp_tts="/sdcard/tts_request.xml"
 OUTPUT="/storage/emulated/0/MacroDroid/tts_output.mp3"
 rm -f "$OUTPUT"
-if [ -z "$TEXT" ]; then
+
+if [ -z "$ai_speak" ]; then
   echo "Error: Input text is empty"
   exit 1
 fi
-CLEAN_TEXT=$(echo "$TEXT" | sed 's/\\\\/\\\\\\\\/g' | sed 's/"/\\\\"/g' | sed 's/\\t/ /g' | tr '\\n' ' ')
-curl -s {OPENAI_TTS_ENDPOINT} \\
-  -H "Authorization: Bearer $OPENAI_KEY" \\
-  -H "Content-Type: application/json" \\
-  -d "{{
-    \\"model\\": \\"{OPENAI_TTS_MODEL}\\",
-    \\"input\\": \\"$CLEAN_TEXT\\",
-    \\"voice\\": \\"{OPENAI_TTS_VOICE}\\",
-    \\"instructions\\": \\"{safe_instructions}\\"
-  }}" \\
+
+# XML-escape the Gemini text. Order matters: & first, then < > "
+CLEAN_TEXT=$(printf '%s' "$ai_speak" \\
+  | tr '\\n' ' ' \\
+  | sed 's/[\\\\]n/ /g' \\
+  | sed 's/[\\\\]t/ /g' \\
+  | sed 's/[\\\\]r//g' \\
+  | sed 's/&/\\&amp;/g' \\
+  | sed 's/</\\&lt;/g' \\
+  | sed 's/>/\\&gt;/g' \\
+  | sed 's/"/\\&quot;/g')
+
+printf '<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="zh-CN"><voice name="%s"><prosody rate="%s">%s</prosody></voice></speak>' \\
+  "$TTS_VOICE" "$TTS_RATE" "$CLEAN_TEXT" > "$temp_tts"
+
+curl -s --max-time 60 "$TTS_URL" \\
+  -H "Ocp-Apim-Subscription-Key: $TTS_KEY" \\
+  -H "Content-Type: application/ssml+xml" \\
+  -H "X-Microsoft-OutputFormat: {AZURE_TTS_OUTPUT_FORMAT}" \\
+  -H "User-Agent: macrodroid" \\
+  --data-binary @"$temp_tts" \\
   --output "$OUTPUT"
+
 if [ -s "$OUTPUT" ]; then
   FIRST_CHAR=$(head -c 1 "$OUTPUT")
-  if [ "$FIRST_CHAR" = "{{" ]; then
+  if [ "$FIRST_CHAR" = "{{" ] || [ "$FIRST_CHAR" = "<" ]; then
     echo "TTS Error: $(cat "$OUTPUT")"
     rm -f "$OUTPUT"
     exit 1
@@ -270,10 +328,14 @@ class AppHandler(BaseHTTPRequestHandler):
             self._send_json(
                 {
                     "geminiPrompt": DEFAULT_GEMINI_PROMPT,
-                    "ttsInstructions": DEFAULT_TTS_INSTRUCTIONS,
                     "geminiModel": GEMINI_MODEL,
-                    "ttsModel": OPENAI_TTS_MODEL,
-                    "ttsVoice": OPENAI_TTS_VOICE,
+                    "ttsModel": "Azure Speech",
+                    "ttsVoice": AZURE_TTS_VOICE,
+                    "ttsRate": AZURE_TTS_RATE,
+                    "ttsRegion": AZURE_SPEECH_REGION or "(unset)",
+                    "ttsConfigured": bool(AZURE_SPEECH_KEY and AZURE_SPEECH_REGION),
+                    "extractorEnabled": bool(EXTRACTOR_URL),
+                    "extractorUrl": EXTRACTOR_URL,
                 }
             )
             return
@@ -291,6 +353,9 @@ class AppHandler(BaseHTTPRequestHandler):
             return
         if self.path == "/api/export":
             self._handle_export()
+            return
+        if self.path == "/api/preprocess":
+            self._handle_preprocess()
             return
         self.send_error(HTTPStatus.NOT_FOUND, "Not found")
 
@@ -321,6 +386,89 @@ class AppHandler(BaseHTTPRequestHandler):
             payload["detail"] = detail
         self._send_json(payload, status=status)
 
+    def _handle_preprocess(self):
+        """Forward an image to the Stage A page extractor and return the cropped result."""
+        if not EXTRACTOR_URL:
+            self._error(
+                "EXTRACTOR_URL 未配置，预处理功能未启用。",
+                status=503,
+                detail="Set the EXTRACTOR_URL env var to your paper-extractor service "
+                       "(e.g. http://127.0.0.1:8123) and restart this server.",
+            )
+            return
+        try:
+            payload = self._read_json()
+            image_base64 = payload.get("imageBase64") or ""
+            image_mime = payload.get("imageMimeType") or "image/jpeg"
+            if not image_base64:
+                self._error("请先选择一张图片。")
+                return
+
+            try:
+                image_bytes = base64.b64decode(image_base64, validate=False)
+            except Exception as exc:  # noqa: BLE001 — preserve user-facing detail
+                self._error("图片解码失败。", status=400, detail=str(exc))
+                return
+
+            ext = mimetypes.guess_extension(image_mime) or ".jpg"
+            if ext == ".jpe":
+                ext = ".jpg"
+            filename = f"upload{ext}"
+
+            # Build a minimal multipart/form-data body without external deps.
+            boundary = f"----paperExtractorBoundary{uuid.uuid4().hex}"
+            crlf = b"\r\n"
+            body = (
+                f"--{boundary}{chr(13)}{chr(10)}"
+                f'Content-Disposition: form-data; name="file"; filename="{filename}"{chr(13)}{chr(10)}'
+                f"Content-Type: {image_mime}{chr(13)}{chr(10)}{chr(13)}{chr(10)}"
+            ).encode("utf-8") + image_bytes + crlf + f"--{boundary}--{chr(13)}{chr(10)}".encode("utf-8")
+
+            # privacy=true is the whole point of using the extractor in this
+            # tool — surrounding scene gets masked to white so it doesn't leak
+            # to the LLM. The frontend can override with privacy=false for debug.
+            privacy = payload.get("privacy", True)
+            privacy_q = "true" if privacy else "false"
+            request = urllib.request.Request(
+                f"{EXTRACTOR_URL}/extract?fmt=jpg&fallback=passthrough&privacy={privacy_q}",
+                data=body,
+                headers={"Content-Type": f"multipart/form-data; boundary={boundary}"},
+                method="POST",
+            )
+            try:
+                with urllib.request.urlopen(request, timeout=30) as response:
+                    cropped_bytes = response.read()
+                    # response.headers is case-insensitive — read fields here.
+                    method = response.headers.get("X-Method", "unknown")
+                    quad_found = response.headers.get("X-Quad-Found") == "true"
+                    original_size = response.headers.get("X-Original-Size")
+                    output_size = response.headers.get("X-Output-Size")
+            except urllib.error.HTTPError as exc:
+                detail = exc.read().decode("utf-8", errors="replace")
+                self._error("Extractor 请求失败。", status=exc.code, detail=detail)
+                return
+            except urllib.error.URLError as exc:
+                self._error(
+                    "Extractor 网络请求失败。",
+                    status=502,
+                    detail=f"无法连接到 {EXTRACTOR_URL}: {exc.reason}",
+                )
+                return
+
+            cropped_b64 = base64.b64encode(cropped_bytes).decode("ascii")
+            self._send_json({
+                "imageBase64": cropped_b64,
+                "imageMimeType": "image/jpeg",
+                "method": method,
+                "quadFound": quad_found,
+                "originalSize": original_size,
+                "outputSize": output_size,
+                "originalBytes": len(image_bytes),
+                "outputBytes": len(cropped_bytes),
+            })
+        except Exception as exc:  # noqa: BLE001
+            self._error("预处理失败。", status=500, detail=str(exc))
+
     def _handle_gemini(self):
         try:
             payload = self._read_json()
@@ -349,7 +497,7 @@ class AppHandler(BaseHTTPRequestHandler):
                     }
                 ],
                 "generationConfig": {
-                    "maxOutputTokens": 8192,
+                    "maxOutputTokens": 65536,
                     "thinkingConfig": {
                         "includeThoughts": False,
                         "thinkingLevel": "high",
@@ -374,42 +522,91 @@ class AppHandler(BaseHTTPRequestHandler):
             self._error("Gemini 请求处理失败。", status=500, detail=str(exc))
 
     def _handle_tts(self):
+        """Synthesize via Azure Speech REST API.
+
+        The traditional FastSpeech2/HiFi-GAN pipeline behind Azure Neural TTS
+        reads every character — that's the point. LLM-based TTS (OpenAI
+        gpt-4o-mini-tts, Bark, etc.) sounds nicer but occasionally drops
+        characters, which is unacceptable for dictation use.
+
+        The legacy OpenAI TTS code below stays as a fallback you can revive by
+        flipping the dispatch — both share the same I/O contract.
+        """
         try:
             payload = self._read_json()
             text = (payload.get("text") or "").strip()
-            instructions = (payload.get("instructions") or "").strip()
             if not text:
                 self._error("没有可朗读的文本。")
                 return
-            if not instructions:
-                self._error("TTS instructions 不能为空。")
+            if not AZURE_SPEECH_KEY or not AZURE_SPEECH_REGION:
+                self._error(
+                    "Azure Speech 未配置。",
+                    status=503,
+                    detail="Set AZURE_SPEECH_KEY and AZURE_SPEECH_REGION (env vars or "
+                           "~/.azure-tts.env) and restart this server.",
+                )
                 return
 
-            request_payload = {
-                "model": OPENAI_TTS_MODEL,
-                "input": text,
-                "voice": OPENAI_TTS_VOICE,
-                "instructions": instructions,
-            }
+            voice = (payload.get("voice") or AZURE_TTS_VOICE).strip()
+            rate = (payload.get("rate") or AZURE_TTS_RATE).strip()
+
+            safe_text = xml_escape(text, quote=True)
+            ssml = (
+                '<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" '
+                'xml:lang="zh-CN">'
+                f'<voice name="{voice}"><prosody rate="{rate}">{safe_text}</prosody></voice>'
+                '</speak>'
+            )
             request = urllib.request.Request(
-                OPENAI_TTS_ENDPOINT,
-                data=json.dumps(request_payload, ensure_ascii=False).encode("utf-8"),
+                azure_tts_endpoint(),
+                data=ssml.encode("utf-8"),
                 headers={
-                    "Authorization": f"Bearer {OPENAI_API_KEY}",
-                    "Content-Type": "application/json",
+                    "Ocp-Apim-Subscription-Key": AZURE_SPEECH_KEY,
+                    "Content-Type": "application/ssml+xml",
+                    "X-Microsoft-OutputFormat": AZURE_TTS_OUTPUT_FORMAT,
+                    "User-Agent": "study-dictation-debug-tool",
                 },
                 method="POST",
             )
-            with urllib.request.urlopen(request, timeout=180) as response:
+            with urllib.request.urlopen(request, timeout=60) as response:
                 raw_audio = response.read()
                 content_type = response.headers.get("Content-Type", "audio/mpeg")
 
-            if raw_audio.startswith(b"{"):
+            if raw_audio[:1] in (b"<", b"{"):
                 detail = raw_audio.decode("utf-8", errors="replace")
-                self._error("TTS API 返回了 JSON 错误。", status=502, detail=detail)
+                self._error("Azure TTS 返回了错误响应。", status=502, detail=detail)
                 return
 
-            self._send_bytes(raw_audio, content_type, extra_headers={"Content-Disposition": 'inline; filename="tts-output.mp3"'})
+            self._send_bytes(
+                raw_audio,
+                content_type,
+                extra_headers={"Content-Disposition": 'inline; filename="tts-output.mp3"'},
+            )
+
+            # ===== Legacy: OpenAI TTS (kept for emergency rollback) =====
+            # Replace the Azure block above with the snippet below if you want
+            # the gpt-4o-mini-tts voice back. Note: ~14s for 500 chars vs
+            # Azure's ~1s, and stochastic — sometimes drops characters.
+            #
+            # OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
+            # OPENAI_TTS_MODEL = "gpt-4o-mini-tts-2025-03-20"
+            # OPENAI_TTS_VOICE = "coral"
+            # request = urllib.request.Request(
+            #     "https://api.openai.com/v1/audio/speech",
+            #     data=json.dumps({
+            #         "model": OPENAI_TTS_MODEL,
+            #         "input": text,
+            #         "voice": OPENAI_TTS_VOICE,
+            #         "instructions": payload.get("instructions") or "",
+            #     }, ensure_ascii=False).encode("utf-8"),
+            #     headers={
+            #         "Authorization": f"Bearer {OPENAI_API_KEY}",
+            #         "Content-Type": "application/json",
+            #     },
+            #     method="POST",
+            # )
+            # with urllib.request.urlopen(request, timeout=180) as response:
+            #     raw_audio = response.read()
         except urllib.error.HTTPError as exc:
             detail = exc.read().decode("utf-8", errors="replace")
             self._error("TTS 请求失败。", status=exc.code, detail=detail)
@@ -422,21 +619,32 @@ class AppHandler(BaseHTTPRequestHandler):
         try:
             payload = self._read_json()
             prompt = payload.get("prompt") or DEFAULT_GEMINI_PROMPT
-            instructions = payload.get("instructions") or DEFAULT_TTS_INSTRUCTIONS
 
             gemini_script = build_gemini_script(prompt)
-            tts_script = build_tts_script(instructions)
+            tts_script = build_tts_script()
 
             buffer = io.BytesIO()
             with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as archive:
                 archive.writestr("gemini_ocr.sh", gemini_script)
-                archive.writestr("tts_openai.sh", tts_script)
+                archive.writestr("tts_azure.sh", tts_script)
                 archive.writestr(
                     "README.txt",
-                    "Exported by Study Dictation Helper.\n"
-                    "The Gemini prompt was flattened to a single JSON-safe line.\n"
-                    "ASCII single and double quotes are stripped from the Gemini prompt for Android /system/bin/sh safety.\n"
-                    "TTS instructions were escaped for the shell JSON payload.\n",
+                    "Exported by Study Dictation Helper (Azure Speech edition).\n"
+                    "\n"
+                    "gemini_ocr.sh — Action 1 in MacroDroid. Reads {file_path} from\n"
+                    "  the FileChangedTrigger, calls Gemini, returns the answer text.\n"
+                    "  Save the stdout into a MacroDroid local variable named ai_speak.\n"
+                    "\n"
+                    "tts_azure.sh — Action 2 in MacroDroid. Reads {{lv=ai_speak}},\n"
+                    "  XML-escapes it, POSTs SSML to Azure Speech, writes mp3 to\n"
+                    "  /storage/emulated/0/MacroDroid/tts_output.mp3.\n"
+                    "\n"
+                    "Replace REPLACE_WITH_YOUR_AZURE_KEY with your Azure Speech key\n"
+                    "(Free F0 tier covers 500K chars/month).\n"
+                    "\n"
+                    "Or use the canonical one-shot script at\n"
+                    "android-scripts/study_dictation_full.sh which combines both\n"
+                    "calls in a single MacroDroid action.\n",
                 )
             archive_bytes = buffer.getvalue()
             self._send_bytes(
@@ -451,6 +659,11 @@ class AppHandler(BaseHTTPRequestHandler):
 def main():
     server = ThreadingHTTPServer((HOST, PORT), AppHandler)
     print(f"Study Dictation Helper running at http://{HOST}:{PORT}")
+    if not (AZURE_SPEECH_KEY and AZURE_SPEECH_REGION):
+        print("  WARNING: Azure Speech not configured — TTS will return 503.")
+        print("  Set AZURE_SPEECH_KEY and AZURE_SPEECH_REGION (env or ~/.azure-tts.env).")
+    else:
+        print(f"  Azure Speech: voice={AZURE_TTS_VOICE} rate={AZURE_TTS_RATE} region={AZURE_SPEECH_REGION}")
     try:
         server.serve_forever()
     except KeyboardInterrupt:
