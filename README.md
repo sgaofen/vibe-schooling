@@ -28,7 +28,7 @@ This repository doesn't resolve that contradiction. It just makes it harder to i
 | Module | What it does | Stack |
 |--------|-------------|-------|
 | [Canvas Sniper](canvas-sniper/) | Auto-answers Canvas LMS quizzes via Chrome extension | Chrome Extension, Gemini AI, GhostCursor |
-| [Glasses Auto-Answer](glasses-auto-answer/) | Smart glasses → photo → AI solves → audio answer in your ear | Xiaomi AI Glass, MacroDroid, Gemini Flash, OpenAI TTS |
+| [Glasses Auto-Answer](glasses-auto-answer/) | Smart glasses → photo → AI solves → audio answer in your ear | Xiaomi AI Glass, MacroDroid, Gemini 3 Flash, Azure Speech TTS |
 | [Claude Cowork](claude-cowork/) | Full homework automation with Skills + Chrome MCP browser control | Claude, Skills, Chrome MCP |
 
 ---
@@ -49,7 +49,7 @@ Stealth mode hides the status notification overlay entirely. The extension runs 
 
 ## Glasses Auto-Answer
 
-The pipeline: Xiaomi AI Glass → take a photo → Android phone detects the new image via MacroDroid → shell script sends the image to Gemini Flash for analysis → answer text goes to OpenAI TTS → audio plays back through the glasses' speakers. The whole loop finishes in seconds.
+The pipeline: Xiaomi AI Glass → take a photo → Android phone detects the new image via MacroDroid → shell script sends the image to Gemini 3 Flash for analysis → answer text goes to Azure Speech TTS (`zh-CN-XiaoxiaoNeural`, REST direct call) → audio plays back through the glasses' speakers. End-to-end ~15-25 seconds.
 
 The critical design choice is **pure audio, no screen**. Every screen-based smart glasses product on the market today has the same fatal flaw: light leakage. Even if the front looks fine, the back of the lens glows. Anyone sitting behind you — or a proctor walking past — can see it. Audio through the glasses' built-in speakers, with privacy mode enabled and volume low, is invisible. The glasses look like ordinary glasses because, functionally, they are. An anti-flash sticker covers the indicator light that would otherwise blink when taking a photo.
 

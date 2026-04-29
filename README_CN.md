@@ -28,7 +28,7 @@
 | 模块 | 功能 | 技术栈 |
 |------|------|--------|
 | [Canvas Sniper](canvas-sniper/) | Chrome 插件自动答 Canvas LMS 题目 | Chrome 扩展、Gemini AI、GhostCursor |
-| [眼镜答题系统](glasses-auto-answer/) | 智能眼镜拍照 → AI 解题 → 语音播报答案 | 小米智能眼镜、MacroDroid、Gemini Flash、OpenAI TTS |
+| [眼镜答题系统](glasses-auto-answer/) | 智能眼镜拍照 → AI 解题 → 语音播报答案 | 小米智能眼镜、MacroDroid、Gemini 3 Flash、Azure Speech TTS |
 | [Claude Cowork](claude-cowork/) | Skills + Chrome MCP 全自动完成作业 | Claude、Skills、Chrome MCP |
 
 ---
@@ -47,7 +47,7 @@
 
 ## 眼镜答题系统
 
-流程：小米智能眼镜拍照 → 手机通过 MacroDroid 检测到新图片 → Shell 脚本把图片发给 Gemini Flash 解题 → 答案文本送到 OpenAI TTS → 音频通过眼镜喇叭播放。整个流程几秒钟完成。
+流程：小米智能眼镜拍照 → 手机通过 MacroDroid 检测到新图片 → Shell 脚本把图片发给 Gemini 3 Flash 解题 → 答案文本送到 Azure Speech TTS（`zh-CN-XiaoxiaoNeural`，REST 直连）→ 音频通过眼镜喇叭播放。整体 15-25 秒完成。
 
 **核心设计：纯音频，不用屏幕。** 市面上所有带屏幕的智能眼镜都有同一个致命问题：漏光。正面可能看不出来，但镜片背面会亮。坐你后面的人、走过来的监考都能看见。用眼镜内置喇叭播放音频，开隐私模式、低音量，从外面完全看不出来。眼镜就是普通眼镜的样子。指示灯用防闪贴纸遮住就行。
 
