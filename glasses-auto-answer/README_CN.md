@@ -91,8 +91,9 @@ glasses-auto-answer/
 └── debug-tool/                    # 本地 web 调试 UI
     ├── app.py                    # 在电脑上调用 Gemini + Azure
     └── static/
-└── paper-extractor/               # 可选：CV 隐私遮罩 + 裁纸
 ```
+
+页面裁剪是可选项，独立 repo 见：[sgaofen/paper-extractor](https://github.com/sgaofen/paper-extractor)。
 
 ---
 
