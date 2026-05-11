@@ -29,6 +29,7 @@ This repository doesn't resolve that contradiction. It just makes it harder to i
 |--------|-------------|-------|
 | [Canvas Sniper](canvas-sniper/) | Auto-answers Canvas LMS quizzes via Chrome extension | Chrome Extension, Gemini AI, GhostCursor |
 | [Glasses Auto-Answer](glasses-auto-answer/) | Smart glasses → photo → AI solves → audio answer in your ear | Xiaomi AI Glass, MacroDroid, Gemini 3 Flash, Azure Speech TTS |
+| [Paper Extractor](https://github.com/sgaofen/paper-extractor) | On-device paper segmentation for handheld glasses photos — pretrained Unet (34MB ONNX) | Python, ONNX Runtime, segmentation-models-pytorch |
 | [Claude Cowork](claude-cowork/) | Full homework automation with Skills + Chrome MCP browser control | Claude, Skills, Chrome MCP |
 
 ---

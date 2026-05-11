@@ -61,9 +61,17 @@
 
 ### 图片路径：原图直接送 Gemini
 
-我们之前做了 `paper-extractor/`——一套 OpenCV 流水线，找出页面、做透视矫正、把非纸像素涂白用于隐私保护。在 38 张样本上平均遮罩了 23% 的画面。视觉上没问题，但偶尔会把题目内容也裁掉（评估集里的 #27、#33 都被切了）。
+生产链路把眼镜原图直接喂 Gemini。Gemini 3 Flash 对手持抖糊角度刁钻的眼镜照已经 ~90% 准——不需要预处理。
 
-最初做隐私遮罩是为了不让 LLM 看到周围环境。但 Gemini 没有 GPT-5.5 的「不帮考试」内容护栏，遮罩这一步现在不是必需的了。`paper-extractor/` 作为可选的进阶模块保留，主流程直接用原图。
+如果想裁得更紧（省 Gemini input tokens、不让 LLM 看到周遭环境），我们训了一个专门的纸张分割模型：[**sgaofen/paper-extractor**](https://github.com/sgaofen/paper-extractor)。架构是个小 Unet（~5M 参数，34MB ONNX，手机 CPU ~100ms），在 341 张手持眼镜照 + 手工 4 角标注上训出来，val IoU 0.96。
+
+接入方式：在手机上跑一个小 Python 服务（Termux + onnxruntime，总开销 ~350ms/张），在调 Gemini 之前加一句 `curl 127.0.0.1:8125/extract`。模型返回矫正后的纸面（mask 太歪就直接 passthrough 原图）。具体看那个 repo 的 README。
+
+之前试过两条路都没成：
+- **纯 OpenCV**（Canny + Hough + approxPolyDP）：干净扫描 ~60%，手持角度全跪。
+- **U²-Netp 通用 salient object 预训练**：基线 ~80%，极端角度失败——"通用显著物"和"纸张边缘"不是一回事。
+
+[sgaofen/paper-extractor](https://github.com/sgaofen/paper-extractor) 那套定制训练把角度问题解决了，因为训练数据是 in-domain 的。
 
 ---
 
@@ -80,9 +88,9 @@ glasses-auto-answer/
 │   └── setup-guide_cn.md
 ├── prompts/
 │   └── gemini-prompt.md          # Gemini prompt 拆解说明
-├── debug-tool/                    # 本地 web 调试 UI
-│   ├── app.py                    # 在电脑上调用 Gemini + Azure
-│   └── static/
+└── debug-tool/                    # 本地 web 调试 UI
+    ├── app.py                    # 在电脑上调用 Gemini + Azure
+    └── static/
 └── paper-extractor/               # 可选：CV 隐私遮罩 + 裁纸
 ```
 

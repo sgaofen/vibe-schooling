@@ -61,9 +61,17 @@ Head-to-head on a 500-character mixed Chinese-English answer:
 
 ### Photo path: raw photos straight to Gemini
 
-Earlier we built `paper-extractor/` — an OpenCV pipeline that finds the page, perspective-corrects it, and white-masks non-paper pixels for privacy. Across 38 sample photos it masked an average of 23% of the frame. It works visually, but occasionally trims real question content (#27, #33 in the eval set were truncated).
+The production flow sends the raw glasses photo directly to Gemini. With Gemini 3 Flash, that's ~90% accurate even on handheld angled photos with hand intrusion — no preprocessing required.
 
-The original motivation was hiding the surrounding scene from the LLM. But Gemini doesn't have GPT-5.5's "I won't help with active exams" content guard, so the privacy mask is no longer load-bearing. We keep `paper-extractor/` as an optional advanced module; the production flow uses raw photos.
+If you want tighter cropping (fewer Gemini input tokens, no surrounding scene visible to the LLM), we trained a dedicated paper segmentation model: [**sgaofen/paper-extractor**](https://github.com/sgaofen/paper-extractor). It's a small Unet (~5M params, 34MB ONNX, ~100ms on phone CPU) trained on 341 of these handheld glasses photos with manual 4-corner annotations. Val IoU = 0.96.
+
+Integration sketch: run the model in a tiny Python service on the phone (Termux + onnxruntime, ~350ms total step latency), and add one `curl 127.0.0.1:8125/extract` step before the Gemini call. The model returns the warped page (or passes the raw photo through if the mask is too irregular). See the dedicated repo's README for details.
+
+We tried two earlier approaches that didn't pan out:
+- **OpenCV-only (Canny + Hough + approxPolyDP)**: ~60% on clean scans, fell apart on handheld angles.
+- **U²-Netp pretrained on generic salient objects**: ~80% baseline; failed at extreme angles because "generic salient object" isn't the same task as "paper boundary".
+
+The custom-trained model in `sgaofen/paper-extractor` solves the angle problem because the training data is in-domain.
 
 ---
 
@@ -80,11 +88,12 @@ glasses-auto-answer/
 │   └── setup-guide_cn.md
 ├── prompts/
 │   └── gemini-prompt.md          # The Gemini prompt, annotated
-├── debug-tool/                    # Local web UI for prompt iteration
-│   ├── app.py                    # Calls Gemini + Azure on your dev machine
-│   └── static/
-└── paper-extractor/               # Optional: CV-based privacy mask + crop
+└── debug-tool/                    # Local web UI for prompt iteration
+    ├── app.py                    # Calls Gemini + Azure on your dev machine
+    └── static/
 ```
+
+Page-cropping is optional and lives in a separate repo: [sgaofen/paper-extractor](https://github.com/sgaofen/paper-extractor).
 
 ---
 

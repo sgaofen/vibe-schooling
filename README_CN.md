@@ -29,6 +29,7 @@
 |------|------|--------|
 | [Canvas Sniper](canvas-sniper/) | Chrome 插件自动答 Canvas LMS 题目 | Chrome 扩展、Gemini AI、GhostCursor |
 | [眼镜答题系统](glasses-auto-answer/) | 智能眼镜拍照 → AI 解题 → 语音播报答案 | 小米智能眼镜、MacroDroid、Gemini 3 Flash、Azure Speech TTS |
+| [Paper Extractor](https://github.com/sgaofen/paper-extractor) | 眼镜手持照片的端侧纸张分割模型 — 预训练 Unet（34MB ONNX）| Python、ONNX Runtime、segmentation-models-pytorch |
 | [Claude Cowork](claude-cowork/) | Skills + Chrome MCP 全自动完成作业 | Claude、Skills、Chrome MCP |
 
 ---
