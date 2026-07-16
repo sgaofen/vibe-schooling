@@ -102,4 +102,4 @@ The deployable script (`android-scripts/study_dictation_full.sh`) and the produc
 - **Edge TTS:** `pip install edge-tts && edge-tts --voice zh-CN-XiaoxiaoNeural --rate=-25% --text "..." --write-media out.mp3`
 - **OpenAI:** the OpenAI block lives as commented-out code in `debug-tool/app.py`. Uncomment, set `OPENAI_API_KEY`, you're back on the old setup.
 
-If you want to A/B locally, the `paper-extractor/results/tts_compare/` directory has rendered samples from all five engines reading the same complex test text — listen and pick.
+If you want to A/B locally, the `results/tts_compare/` directory in the separate [sgaofen/paper-extractor](https://github.com/sgaofen/paper-extractor) repo has rendered samples from all five engines reading the same complex test text — listen and pick.

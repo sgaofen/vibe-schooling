@@ -40,7 +40,7 @@
 
 一个 Chrome 扩展，用 Gemini AI 回答 Canvas LMS 的各种题型。双击题目，答案就填好了。
 
-支持单选、多选、下拉、填空、混合题型和论述题。开启鼠标模拟后，光标会沿贝塞尔曲线移动（GhostCursor），逐字输入带随机停顿，先打开下拉菜单再选择——行为上和真人几乎无法区分。CDP 集成让鼠标移动发生在浏览器层面，不只是 DOM 事件。隐身模式会隐藏所有状态提示。Canvas 看到的只是一个正常答题的学生。
+支持单选、多选、下拉、填空、混合题型和论述题。开启鼠标模拟后，光标会沿贝塞尔曲线移动（GhostCursor），逐字输入带随机停顿，先打开下拉菜单再选择——行为上和真人几乎无法区分。这一切都发生在 DOM 层面——GhostCursor 派发和真实光标一样的指针和输入事件，也正是页面真正监听的。隐身模式会隐藏所有状态提示。Canvas 看到的只是一个正常答题的学生。
 
 **不能绕过 Lockdown Browser。** 如果你学校用 Respondus，这个工具帮不了你。监考考试请用眼镜系统。
 
@@ -78,7 +78,7 @@ git clone https://github.com/sgaofen/vibe-schooling.git
 
 1. 打开 `chrome://extensions/`，启用**开发者模式**
 2. 点击**加载已解压的扩展程序**，选择 `canvas-sniper/` 文件夹
-3. 点击扩展图标 → 在帮助页面输入你的 Gemini API key
+3. 打开 `canvas-sniper/background.js`，在 `GEMINI_API_KEY` 常量里填入你的 Gemini API key
 4. 打开任何 Canvas 测验 → 双击题目
 
 ### 路径二：眼镜答题系统
@@ -92,7 +92,7 @@ git clone https://github.com/sgaofen/vibe-schooling.git
 
 ```bash
 cd glasses-auto-answer/debug-tool
-GEMINI_API_KEY=你的密钥 OPENAI_API_KEY=你的密钥 python3 app.py
+GEMINI_API_KEY=你的密钥 AZURE_SPEECH_KEY=你的密钥 AZURE_SPEECH_REGION=westus2 python3 app.py
 # 打开 http://127.0.0.1:8765
 ```
 
@@ -110,7 +110,7 @@ GEMINI_API_KEY=你的密钥 OPENAI_API_KEY=你的密钥 python3 app.py
 | 模块 | 需要 |
 |------|------|
 | Canvas Sniper | Chrome/Chromium 浏览器、[Gemini API 密钥](https://aistudio.google.com/apikey)（免费额度就够） |
-| 眼镜答题系统 | Android 手机、小米智能眼镜、[MacroDroid](https://www.macrodroid.com/)、Gemini API 密钥、[OpenAI API 密钥](https://platform.openai.com/api-keys) |
+| 眼镜答题系统 | Android 手机、小米智能眼镜、[MacroDroid](https://www.macrodroid.com/)、Gemini API 密钥、[Azure Speech 密钥 + region](https://portal.azure.com)（免费 F0 档） |
 | Claude Cowork | [Claude Code CLI](https://docs.anthropic.com/en/docs/claude-code)、[Chrome MCP](https://browsermcp.io/)、Anthropic API 权限 |
 
 ---
@@ -120,7 +120,7 @@ GEMINI_API_KEY=你的密钥 OPENAI_API_KEY=你的密钥 python3 app.py
 | 指南 | 说明 |
 |------|------|
 | [AI 模型选择指南](docs/model-selection-guide_cn.md) | 不同任务选什么模型、为什么 |
-| [TTS 方案对比](docs/tts-comparison-guide_cn.md) | OpenAI 对比其他语音合成方案 |
+| [TTS 方案对比](docs/tts-comparison-guide_cn.md) | Azure、OpenAI、edge-tts 与本地引擎的听写 TTS 对比 |
 | [隐蔽性与隐私建议](docs/stealth-tips_cn.md) | 怎么用才不会被发现 |
 
 ---

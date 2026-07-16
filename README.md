@@ -40,7 +40,7 @@ Originally at [`sgaofen/canvas-sniper`](https://github.com/sgaofen/canvas-sniper
 
 A Chrome extension that answers Canvas LMS quiz questions using Gemini AI. Double-click any question. That's the entire workflow.
 
-It handles the question types you'd expect — multiple choice, multi-select, dropdown, fill-in-the-blank, mixed inputs, and full essay responses. But the interesting part is how it *behaves*. Turn on Mouse Simulation and it stops acting like a bot: the cursor traces bezier curves across the page with GhostCursor, types characters one at a time with irregular pauses, opens dropdown menus before selecting, and adds the kind of micro-hesitations a real hand produces. With CDP integration, the mouse movement happens at the browser level — not just DOM events.
+It handles the question types you'd expect — multiple choice, multi-select, dropdown, fill-in-the-blank, mixed inputs, and full essay responses. But the interesting part is how it *behaves*. Turn on Mouse Simulation and it stops acting like a bot: the cursor traces bezier curves across the page with GhostCursor, types characters one at a time with irregular pauses, opens dropdown menus before selecting, and adds the kind of micro-hesitations a real hand produces. It all happens at the DOM level — GhostCursor dispatches the same pointer and input events a real cursor would, which is what the page actually listens for.
 
 Stealth mode hides the status notification overlay entirely. The extension runs in the page's background. Canvas sees a student clicking through a quiz.
 
@@ -80,7 +80,7 @@ git clone https://github.com/sgaofen/vibe-schooling.git
 
 1. Open `chrome://extensions/`, enable **Developer mode**
 2. Click **Load unpacked**, select the `canvas-sniper/` folder
-3. Click the extension icon → enter your Gemini API key on the Help page
+3. Open `canvas-sniper/background.js` and set your Gemini API key in the `GEMINI_API_KEY` constant
 4. Open any Canvas quiz → double-click a question
 
 ### Path 2: Glasses Auto-Answer
@@ -94,7 +94,7 @@ To test without hardware, use the debug tool:
 
 ```bash
 cd glasses-auto-answer/debug-tool
-GEMINI_API_KEY=your_key OPENAI_API_KEY=your_key python3 app.py
+GEMINI_API_KEY=your_key AZURE_SPEECH_KEY=your_key AZURE_SPEECH_REGION=westus2 python3 app.py
 # Open http://127.0.0.1:8765
 ```
 
@@ -112,7 +112,7 @@ GEMINI_API_KEY=your_key OPENAI_API_KEY=your_key python3 app.py
 | Module | Requirements |
 |--------|-------------|
 | Canvas Sniper | Chrome/Chromium browser, [Gemini API key](https://aistudio.google.com/apikey) (free tier works) |
-| Glasses Auto-Answer | Android phone, Xiaomi AI Glass, [MacroDroid](https://www.macrodroid.com/), Gemini API key, [OpenAI API key](https://platform.openai.com/api-keys) |
+| Glasses Auto-Answer | Android phone, Xiaomi AI Glass, [MacroDroid](https://www.macrodroid.com/), Gemini API key, [Azure Speech key + region](https://portal.azure.com) (free F0 tier) |
 | Claude Cowork | [Claude Code CLI](https://docs.anthropic.com/en/docs/claude-code), [Chrome MCP](https://browsermcp.io/), Anthropic API access |
 
 ---
@@ -122,7 +122,7 @@ GEMINI_API_KEY=your_key OPENAI_API_KEY=your_key python3 app.py
 | Guide | Description |
 |-------|-------------|
 | [AI Model Selection Guide](docs/model-selection-guide.md) | Which models to use for which tasks, and why |
-| [TTS Provider Comparison](docs/tts-comparison-guide.md) | OpenAI vs alternatives for text-to-speech |
+| [TTS Provider Comparison](docs/tts-comparison-guide.md) | Azure vs OpenAI vs edge-tts and local engines for dictation TTS |
 | [Stealth & Privacy Tips](docs/stealth-tips.md) | Practical advice on staying undetected |
 
 ---

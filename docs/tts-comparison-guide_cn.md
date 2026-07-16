@@ -102,4 +102,4 @@ OpenAI 还做得好的：
 - **Edge TTS**：`pip install edge-tts && edge-tts --voice zh-CN-XiaoxiaoNeural --rate=-25% --text "..." --write-media out.mp3`
 - **OpenAI**：旧的 OpenAI 块在 `debug-tool/app.py` 里以注释代码保留。取消注释，配 `OPENAI_API_KEY`，回到旧链路。
 
-想本地 A/B 听，`paper-extractor/results/tts_compare/` 里有同一段复杂测试文本被 5 个引擎渲染的样本——逐个听，自己挑。
+想本地 A/B 听，独立仓库 [sgaofen/paper-extractor](https://github.com/sgaofen/paper-extractor) 的 `results/tts_compare/` 里有同一段复杂测试文本被 5 个引擎渲染的样本——逐个听，自己挑。

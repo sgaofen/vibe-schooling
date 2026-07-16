@@ -22,7 +22,7 @@ This matters because the glasses camera isn't great. You're taking photos throug
 
 ## What about Claude and GPT?
 
-Both are good at reasoning. Pure text problems — philosophy essays, reading comprehension, legal analysis — they're competitive. GPT-4o and Claude Sonnet/Opus hold their own on text-only tasks.
+Both are good at reasoning. Pure text problems — philosophy essays, reading comprehension, legal analysis — they're competitive. GPT-5 and Claude Sonnet/Opus hold their own on text-only tasks.
 
 But the moment there's an image, Gemini wins. And for this project, there's almost always an image.
 
@@ -44,7 +44,7 @@ Kimi is the exception — native vision. Accuracy is decent, not Gemini level, b
 
 ## Comparison
 
-| | Gemini 3 Flash | Claude Sonnet | GPT-4o | Kimi | DeepSeek |
+| | Gemini 3 Flash | Claude Sonnet | GPT-5 | Kimi | DeepSeek |
 |---|---|---|---|---|---|
 | Image understanding | Excellent | Good | Good | Decent | Poor (OCR) |
 | Blurry photo handling | Excellent | Okay | Okay | Decent | Poor |
